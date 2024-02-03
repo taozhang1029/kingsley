@@ -1,0 +1,17 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "description": "基于VuePress搭建的博客系统",
+  "main": "index.js",
+  "repository": "https://github.com/taozhang1029/blog",
+  "author": "kingsley <taozhang1029@qq.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
+  },
+  "devDependencies": {
+    "vuepress": "^1.9.10"
+  }
+}
