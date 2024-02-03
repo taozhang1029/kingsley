@@ -1,7 +1,7 @@
 {
   "name": "blog",
   "version": "1.0.0",
-  "description": "基于VuePress搭建的博客系统",
+  "description": "程序员涛涛的博客空间",
   "main": "index.js",
   "repository": "https://github.com/taozhang1029/blog",
   "author": "kingsley <taozhang1029@qq.com>",
@@ -13,5 +13,9 @@
   },
   "devDependencies": {
     "vuepress": "^1.9.10"
+  },
+  "dependencies": {
+    "@types/moment": "^2.13.0",
+    "moment": "^2.30.1"
   }
 }

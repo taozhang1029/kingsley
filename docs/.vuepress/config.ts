@@ -1,4 +1,7 @@
 import {defineConfig} from "vuepress/config";
+// 不要忘了安装 moment
+// @ts-ignore
+import moment from 'moment';
 
 export default defineConfig({
     // 网站的标题，它将会被用作所有页面标题的前缀，同时，默认主题下，它将显示在导航栏（navbar）上。
@@ -8,16 +11,31 @@ export default defineConfig({
     markdown: {
         lineNumbers: true
     },
+    plugins: [
+        [
+            '@vuepress/last-updated', {
+            transformer: (timestamp: number, lang: string) => {
+                moment.locale(lang)
+                return moment(timestamp).format('YYYY-MM-DD HH:mm')
+            }
+        }
+        ]
+    ],
     themeConfig: {
+        smoothScroll: true,
         // string | boolean
-        lastUpdated: true,
+        lastUpdated: '最后更新于',
         nav: [
             {text: '首页', link: '/'},
             {text: '后端开发', link: '/back-end/'},
             {text: '前端开发', link: '/front-end/'},
-            {text: '小程序开发', link: '/mini-program/'},
-            {text: '安卓开发', link: '/android/'},
-            {text: 'IOS开发', link: '/ios/'},
+            {
+                text: '移动端开发', items: [
+                    {text: '小程序开发', link: '/mini-program/'},
+                    {text: '安卓开发', link: '/android/'},
+                    {text: 'IOS开发', link: '/ios/'},
+                ]
+            },
             {text: 'Github', link: 'https://github.com/taozhang1029', rel: true},
         ],
         sidebar: {
