@@ -9,7 +9,8 @@
   "private": false,
   "scripts": {
     "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "docs:build": "vuepress build docs",
+    "deploy": "/usr/bin/env sh deploy.sh"
   },
   "devDependencies": {
     "vuepress": "^1.9.10"
