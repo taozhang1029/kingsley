@@ -2,7 +2,7 @@
 home: true
 heroImage: /favicon.ico
 heroText: 程序员涛涛的博客空间
-tagline: 一名专职后端但不局限于后端的程序员
+tagline: 一名程序员
 actionText: 快速开始 →
 actionLink: /back-end/
 features:
