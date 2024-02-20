@@ -353,7 +353,7 @@ Object(Field not matches "正则表达式")
     int fireAllRules(AgendaFilter agendaFilter);
     
 ```
-![img.png](img.png)
+![img.png](./img.png)
 
 ### 7、关键字
 Drools的关键字分为：硬关键字和软关键字。
