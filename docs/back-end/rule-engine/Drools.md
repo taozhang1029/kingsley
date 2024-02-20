@@ -221,4 +221,150 @@ Drools支持的规则文件除了.drl外，还有Excel文件类型的
 
 ### 2、规则体语法结构
 
+规则体是Drools规则文件的重要部分，是进行业务规则判断、处理业务结果的部分，规则体语法结构如下：
+```java
+rule "规则名称"
+    attributes
+    when
+        LHS
+    then
+        RHS
+end
+```
+
+**rule**：关键字，规则体的开始标志符，后面跟规则名称  
+**attributes**：规则属性，是rule与when之间的参数，为可选项  
+**when**：关键字，规则体的条件部分，用于判断规则是否生效，如果条件成立，则执行then部分的逻辑  
+**LHS**（Left Hand Side）：左部条件，是when部分的条件，用于判断规则是否生效，它由零个或多个条件元素组成，如果LHS为空，则它将被视为true。如果条件成立，则执行then部分的逻辑  
+**then**：关键字，规则体的处理部分，用于处理规则生效后的结果  
+**RHS**（Right Hand Side）：是规则的后果或行动部分  
+**end**：关键字，规则体的结束标志符，表示规则体的结束，必须与rule关键字配对使用
+
+### 3、注释
+Drools支持两种注释，一种是单行注释，另一种是多行注释，两种注释的语法与Java类中使用一致，如下：
+```java
+// 单行注释
+rule "rule1"
+    when
+    then
+        System.out.println("Hello World!");
+end
+
+
+/*
+多行注释
+*/
+rule "rule2"
+    when
+    then
+        System.out.println("Hello World!");
+end
+```
+
+### 4、Pattern模式匹配
+Pattern模式匹配的语法如下：绑定变量名：Object(Field约束)
+其中绑定变量名可以省略，通常绑定变量名的命名一版建议以$开头，如果定义了绑定变量名，那么在then部分的逻辑中就可以通过绑定变量名来操作对应的Fact对象。
+Field约束部分是需要返回true或者false的0个或多个条件表达式。
+
+```java
+// 所购图书总价在200元-300元之间，优惠50元
+rule "bookDiscount3"
+    when
+        $order:Order(originalPrice >= 200 && originalPrice < 300) // 模式匹配，到规则引擎中（工作内存）查找满足条件的Order对象，赋值给$order（固定写法）
+    then
+        $order.setActualPrice($order.getOriginalPrice().subtract(BigDecimal.valueOf(50)));
+        System.out.println("命中规则3，图书的原始价格为: " + $order.originalPrice);
+end
+```
+
+通过上面的例子我们可以知道  
+1、工作内存中必须存在Order这种类型的Fact对象——类型约束  
+2、Fact对象的originalPrice必须大于等于200元——属性约束    
+3、Fact对象的originalPrice必须小于300元——属性约束  
+以上条件必须同时满足，当前规则才有可能被激活
+
+**绑定变量即可用在对象上，也可以用在对象的属性上**
+```java
+// 所购图书总价在200元-300元之间，优惠50元
+rule "bookDiscount3"
+    when
+        $order:Order($op:originalPrice >= 200 && originalPrice < 300) 
+    then
+        $order.setActualPrice($order.getOriginalPrice().subtract(BigDecimal.valueOf(50)));
+        System.out.println("命中规则3，图书的原始价格为: " + $op);
+end
+```
+
+**LHS部分还可以定义多个Pattern模式匹配，多个Pattern模式匹配可以使用逻辑运算符 and 或者 or 进行连接，也可以不写，默认是and。**
+```java
+// 所购图书总价在200元-300元之间，优惠50元
+rule "bookDiscount3"
+    when
+        $order:Order($op:originalPrice >= 200 && originalPrice < 300) and
+        $customer:Customer(age >= 18 && gender == 'male')
+    then
+        $order.setActualPrice($order.getOriginalPrice().subtract(BigDecimal.valueOf(50)));
+        System.out.println("命中规则3，图书的原始价格为: " + $op);
+end
+```
+
+### 5、比较操作符
+Drools支持的比较操作符如下：
+
+| 操作符          | 描述                               |
+|--------------|----------------------------------|
+| ==           | 等于                               |
+| !=           | 不等于                              |
+| <            | 小于                               |
+| <=           | 小于等于                             |
+| \>           | 大于                               |
+| >=           | 大于等于                             |
+| contains     | 检查Fact对象的属性值是否包含指定的值             |
+| not contains | 检查Fact对象的属性值是否不包含指定的值            |
+| memberOf     | 检查Fact对象的属性值是否在一个或多个集合中          |
+| not memberOf | 检查Fact对象的属性值是否不在一个或多个集合中         |
+| matches      | 检查Fact对象的属性值是否与提供的标准Java正则表达式匹配  |
+| not matches  | 检查Fact对象的属性值是否与提供的标准Java正则表达式不匹配 |
+
+语法：前6个操作符和Java的比较操作符一致  
+- **contains** ｜ **not contains** 语法结构  
+Object(Field[Collection/Array] contains value)
+Object(Field[Collection/Array] not contains value)
+
+- **memberOf** ｜ **not memberOf** 语法结构  
+Object(Field memberOf value[Collection/Array])
+Object(Field not memberOf value[Collection/Array])
+
+- **matches** ｜ **not matches** 语法结构  
+Object(Field matches "正则表达式")
+Object(Field not matches "正则表达式")
+
+### 6、执行指定规则
+
+使用Drools框架提供的规则过滤器，可以只执行指定的规则，不执行其他规则。
+```java
+
+    /**
+     * Fire all Matches on the Agenda
+     *
+     * @param agendaFilter filters the Matches that may fire
+     * @return returns the number of rules fired
+     */
+    int fireAllRules(AgendaFilter agendaFilter);
+    
+```
+![img.png](img.png)
+
+### 7、关键字
+Drools的关键字分为：硬关键字和软关键字。
+**硬关键字**：硬关键字是我们在规则文件中 定义包名 或者 规则名 时明确不能使用的，硬关键字一旦使用，编译器会报错。
+**软关键字**：软关键字虽然可以使用的，但是不建议使用。
+硬关键字包括：true、false、null
+软关键字包括：lock-on-active、date-effective、date-expires、no-loop、auto-focus、activation-group、agenda-group、entry-point、duration、
+package、import、dialect、salience、enabled、attributes、rule、extend、when、then、template、query、declare、function、global、
+eval、not、in、or、and、exists、forall、accumulate、from、collect、action、reverse、result、end、over、init
+
+### 8、Drools内置方法
+
+
 
