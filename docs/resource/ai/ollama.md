@@ -80,7 +80,9 @@ Created symlink /etc/systemd/system/default.target.wants/ollama.service → /etc
 WARNING: No NVIDIA GPU detected. Ollama will run in CPU-only mode.
 ```
 
-从日志可以看出ollama自动启动了，并且创建了服务。通知也可以通过命令查看
+从日志可以看出ollama自动启动了，安装脚本会自动检测GPU，如果存在则会自动安装CUDA及驱动，在调用模型时会使用GPU加速。
+
+安装完成后会创建了服务，可以通过命令查看服务状态
 ```shell
 [root@centos ~]# systemctl status ollama
 ● ollama.service - Ollama Service
@@ -496,3 +498,7 @@ Ollama支持中文，只要模型支持即可，如gemma
 - [chatd](https://github.com/BruceMacD/chatd)
 - [Ollama-SwiftUI](https://github.com/kghandour/Ollama-SwiftUI)
 
+****
+例如 chatbot-ollama
+
+![img.png](./img.png)

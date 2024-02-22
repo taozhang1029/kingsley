@@ -1,17 +1,17 @@
 ---
 home: true
 heroImage: /favicon.ico
-heroText: 涛涛的百科领地
-tagline: 程序员涛涛的博客空间
-actionText: 快速开始 →
-actionLink: /back-end/
+heroText: 欢迎来到编程游乐场
+tagline: null
+actionText: 开始游览 →
+actionLink: /resource/ai/ollama/
 features:
 - title: 后端
-  details: 主要介绍Java后端开发涉及的相关技术
+  details: Java后端开发涉及的相关技术
 - title: 前端
-  details: 主要介绍Vue开发、React开发
+  details: Vue、React等
 - title: 移动端
-  details: 涉及小程序开发、安卓开发、IOS开发等
+  details: 小程序、安卓、IOS
 ---
 
 ::: slot footer

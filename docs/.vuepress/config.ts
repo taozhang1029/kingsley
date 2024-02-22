@@ -6,7 +6,8 @@ import moment from 'moment';
 export default defineConfig({
     base: '/blog/',
     // 网站的标题，它将会被用作所有页面标题的前缀，同时，默认主题下，它将显示在导航栏（navbar）上。
-    title: '程序员涛涛',
+    // title: '程序员涛涛',
+    title: '编程游乐场',
     // 网站的描述，它将会以 <meta> 标签渲染到当前页面的 HTML 中。
     description: '程序员涛涛的博客空间',
     markdown: {
@@ -18,20 +19,20 @@ export default defineConfig({
         }
     },
     plugins: [
-        [
-            '@vuepress/last-updated',
-            {
-                transformer: (timestamp: number, lang: string) => {
-                    moment.locale(lang)
-                    return moment(timestamp).format('YYYY-MM-DD HH:mm')
-                }
-            }
-        ]
+        // [
+        //     '@vuepress/last-updated',
+        //     {
+        //         transformer: (timestamp: number, lang: string) => {
+        //             moment.locale(lang)
+        //             return moment(timestamp).format('YYYY-MM-DD HH:mm')
+        //         }
+        //     }
+        // ]
     ],
     themeConfig: {
         smoothScroll: true,
         // string | boolean
-        lastUpdated: '最后更新于',
+        // lastUpdated: '最后更新于',
         nav: [
             {
                 text: '首页',
@@ -54,10 +55,10 @@ export default defineConfig({
                 ]
             },
             {
-                text: '算法题',
+                text: '算法',
                 items: [
                     {text: 'LeetCode', link: '/algorithm/leetcode/'},
-                    {text: '牛客', link: '/algorithm/nowcoder/'},
+                    {text: '牛客', link: '/algorithm/newcoder/'},
                 ]
             },
             {
@@ -83,7 +84,7 @@ export default defineConfig({
             ],
             '/back-end/': [
                 {
-                    title: '规则引擎',   // 必要的
+                    title: '规则/流程引擎',   // 必要的
                     collapsable: true, // 可选的, 默认值是 true,
                     path: '/back-end/rule-engine',
                     sidebarDepth: 1,    // 可选的, 默认值是 1
@@ -101,7 +102,7 @@ export default defineConfig({
             ],
             '/resource/': [
                 {
-                    title: 'ai',   // 必要的
+                    title: 'AI',   // 必要的
                     collapsable: true, // 可选的, 默认值是 true,
                     sidebarDepth: 1,    // 可选的, 默认值是 1
                     children: [
@@ -116,8 +117,31 @@ export default defineConfig({
                 '',
             ],
             '/android/': [
-                '',
-                'native',
+                {
+                    title: '原生安卓',
+                    path: '/android/',
+                    collapsable: false, // 可选的, 默认值是 true,
+                    sidebarDepth: 1,    // 可选的, 默认值是 1
+                },
+                {
+                    title: '混合开发',
+                    collapsable: true,
+                    sidebarDepth: 2,
+                    children: [
+                        {
+                            title: 'Flutter',
+                            path: '/android/flutter',
+                        },
+                        {
+                            title: 'React Native',
+                            path: '/android/react-native',
+                        },
+                        {
+                            title: 'uni-app',
+                            path: '/android/uni-app',
+                        },
+                    ]
+                }
             ],
             '/ios/': [
                 '',
