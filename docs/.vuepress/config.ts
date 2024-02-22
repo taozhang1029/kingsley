@@ -14,8 +14,7 @@ export default defineConfig({
     },
     configureWebpack: {
         resolve: {
-            alias: {
-            }
+            alias: {}
         }
     },
     plugins: [
@@ -55,6 +54,17 @@ export default defineConfig({
                 ]
             },
             {
+                text: '算法题',
+                items: [
+                    {text: 'LeetCode', link: '/algorithm/leetcode/'},
+                    {text: '牛客', link: '/algorithm/nowcoder/'},
+                ]
+            },
+            {
+                text: '资源',
+                link: '/resource/ai/ollama'
+            },
+            {
                 text: 'Github',
                 link: 'https://github.com/taozhang1029',
                 rel: true
@@ -86,6 +96,19 @@ export default defineConfig({
                             title: 'LiteFlow',   // 必要的
                             path: '/back-end/rule-engine/LiteFlow',
                         }
+                    ]
+                },
+            ],
+            '/resource/': [
+                {
+                    title: 'ai',   // 必要的
+                    collapsable: true, // 可选的, 默认值是 true,
+                    sidebarDepth: 1,    // 可选的, 默认值是 1
+                    children: [
+                        {
+                            title: 'Ollama',   // 必要的
+                            path: '/resource/ai/ollama'
+                        },
                     ]
                 },
             ],
