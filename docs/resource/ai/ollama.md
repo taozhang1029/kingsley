@@ -1,37 +1,59 @@
 ## 一、Ollama 是什么?
 
-Ollama 是一个强大的框架，设计用于在 Docker 容器中部署 LLM。Ollama 的主要功能是在 Docker 容器内部署和管理 LLM 的促进者，它使该过程变得非常简单。
-它帮助用户快速在本地运行大模型，通过简单的安装指令，可以让用户执行一条命令就在本地运行开源大型语言模型，例如 Llama 2。
-
-Ollama 将模型权重、配置和数据捆绑到一个包中，定义成 Modelfile。它优化了设置和配置细节，包括 GPU 使用情况。
-
 官方网站：https://ollama.ai/  
 GitHub：https://github.com/ollama/ollama  
 Star数：39K+
+
+Ollama 是一个强大的框架，通过简单的安装指令，可以让用户执行一条命令就在本地运行开源大型语言模型。
+> Ollama 将模型权重、配置和数据捆绑到一个包中，定义成 Modelfile，它优化了设置和配置细节，包括 GPU 使用情况
+
+### Ollama的核心功能
+- 易于安装和使用：Ollama 支持 macOS、Windows 和 Linux，提供了简洁明了的安装和运行指令，让用户无需深入了解复杂的配置即可启动和运行。
+- 丰富的模型库：通过Ollama，用户可以访问和运行包括 Llama 2、Mistral 和 Dolphin Phi 在内的多种大型语言模型。这为开发者和研究者提供了极大的便利。
+- 高度可定制：Ollama 允许用户通过 Modelfile 定义和创建自定义模型，满足特定应用场景的需求。
+- 优化的性能：即使在普通的个人电脑上，Ollama 也能通过优化运行效率，支持运行较小的模型，为用户提供实验和测试的环境。
+
+**Ollama的独特之处**
+
+与市面上其他相似工具相比，Ollama 最大的特色在于它的易用性和灵活性。用户不仅可以通过命令行界面快速运行模型，还可以选择图形用户界面（GUI）进行交互，如 Ollama WebUI 和 macOS 的原生应用 Ollamac 等，极大地提高了用户体验。
 
 ## 二、基本使用
 
 ### 1、安装
 
-ollama极大的简化了安装的过程，并提供了多种选择。 支持的平台包括：macOS, Linux, and Windows (preview)，并提供了docker 镜像。
+Ollama极大的简化了安装的过程，并提供了多种选择。 支持的平台包括：macOS, Linux, and Windows (preview)，并提供了docker 镜像。
 
 - Mac：
-  如果你使用的是Mac，那么你可以直接下载安装包，地址如下：https://ollama.ai/download下载完成后，直接安装即可。
+  如果你使用的是Mac，那么你可以直接下载安装包，地址如下：https://ollama.ai/download 下载完成后，直接安装即可。
 
 - Linux：直接执行以下命令可以完成默认安装。
     ```shell
     curl -fsSL https://ollama.com/install.sh | sh
     ```
+- Windows：下载预览版或通过相同的渠道获取最新版本，根据下载的安装程序指引完成安装。
 
-### 2、运行大模型（如Llama 2）
+- Docker：Ollama也提供了官方的Docker镜像
+  ```shell
+  docker pull ollama/ollama
+  ```
 
-To run and chat with Llama 2:
+### 2、运行模型
+- 下载模型：ollama pull <模型名>
+- 下载并运行模型：ollama run <模型名>
+- 可以通过创建Modelfile并使用 ollama create <模型名> -f ./Modelfile 来创建自定义模型
+
+安装完成后，打开终端（macOS）或命令提示符（Windows），输入命令来下载并运行一个模型，例如 Llama 2
 
 ```shell
 ollama run llama2
 ```
 
-Ollama支持的模型可通过 [ollama.com/library](https://ollama.com/library) 查看
+Docker运行模型
+```shell
+docker run -it ollama/ollama run llama2
+```
+
+Ollama支持多种开源模型，可通过 [ollama.com/library](https://ollama.com/library) 查看所有可用的模型
 
 其中部分模型：?B = 10x?亿参数
 
@@ -51,17 +73,20 @@ Ollama支持的模型可通过 [ollama.com/library](https://ollama.com/library) 
 | Vicuna             | 7B         | 3.8GB | `ollama run vicuna`            |
 | LLaVA              | 7B         | 4.5GB | `ollama run llava`             |
 
-> Note: You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.
+> Note: You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.  
 > 7B模型需要8G内存，13B模型需要16G内存，33B模型需要32G内存。
-
 
 除了简单的启动模型外，Ollama 可以通过编写 Modelfile 来导入更多的自定义模型， Ollama具备灵活的扩展性，它支持和很多工具集成，除了命令行的使用方式，可以通过配合UI界面，简单快速的打造一个类ChatGPT应用。
 
 ### 3、调用模型
-见[实践-调用大模型](./ollama.md#3-调用大模型)
+见[实践-调用模型](./ollama.md#3-调用模型)
 
 ## 三、实践
-以Linux系统，使用Google开源大模型Gemma为例，使用Ollama搭建一个类似于ChatGPT的应用
+以Linux系统，使用Google开源模型**Gemma**为例，使用Ollama搭建一个类似于ChatGPT的应用
+
+> 北京时间2月21日晚21点，美国科技巨头谷歌（Google）宣布推出全球性能最强大、轻量级的开源模型系列Gemma，分为2B（20亿参数）和7B（70亿）两种尺寸版本，2B版本甚至可直接在笔记本电脑上运行。
+> 谷歌表示，Gemma采用与 Gemini 模型相同的研究和技术，由Google DeepMind 和谷歌其他团队开发，专为负责任的 AI开发而打造。谷歌声称，Gemma 模型18个语言理解、推理、数学等关键基准测试中，有11个测试分数超越了Meta Llama-2等更大参数的开源模型。 
+> 平均分数方面，Gemma -7B 的基准测试平均分高达56.4，远超过Llama-13B（52.2）、Mistral-7B（54.0），成为目前全球最强大的开源模型。
 
 ### 1. 安装Ollama
 ```shell
@@ -106,7 +131,7 @@ WARNING: No NVIDIA GPU detected. Ollama will run in CPU-only mode.
 2月 22 23:59:45 centos ollama[372779]: [GIN] 2024/02/22 - 23:59:45 | 200 |      42.612µs |       127.0.0.1 | HEAD     "/"
 ```
 
-### 2. 安装大模型
+### 2. 安装模型
 例如 Gemma
 ```shell
 [root@centos ~]# ollama run gemma
@@ -122,10 +147,10 @@ removing any unused layers
 success 
 ```
 
-### 3. 调用大模型
+### 3. 调用模型
 
-#### a. 使用终端交互调用大模型
-大模型安装成功后终端会自动停留，等待用户输入调用大模型，例如输入 Why is the sky blue?
+#### a. 使用终端交互调用模型
+模型安装成功后终端会自动停留，等待用户输入调用模型，例如输入 Why is the sky blue?
 
 ```shell
 >>> Why is the sky blue?
@@ -163,7 +188,7 @@ Use Ctrl + d or /bye to exit.
 [root@centos ~]# 
 ```
 
-#### b. 使用http请求调用大模型
+#### b. 使用http请求调用模型
 - 所选模型未安装的情况下，会返回错误信息
 ```shell
 [root@centos ~]# curl -X POST http://localhost:11434/api/generate -d '{
