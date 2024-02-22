@@ -1,7 +1,7 @@
 ## 一、Ollama 是什么?
 
-官方网站：https://ollama.ai/  
-GitHub：https://github.com/ollama/ollama  
+官方网站：[https://ollama.ai/](https://ollama.ai/)  
+GitHub：[https://github.com/ollama/ollama](https://github.com/ollama/ollamahttps://github.com/ollama/ollama)  
 Star数：39K+
 
 Ollama 是一个强大的框架，通过简单的安装指令，可以让用户执行一条命令就在本地运行开源大型语言模型。
@@ -24,13 +24,14 @@ Ollama 是一个强大的框架，通过简单的安装指令，可以让用户�
 Ollama极大的简化了安装的过程，并提供了多种选择。 支持的平台包括：macOS, Linux, and Windows (preview)，并提供了docker 镜像。
 
 - Mac：
-  如果你使用的是Mac，那么你可以直接下载安装包，地址如下：https://ollama.ai/download 下载完成后，直接安装即可。
+  使用Mac可以[下载安装包](https://ollama.ai/download)，下载完成后直接安装即可。
+
+- Windows：下载预览版或通过相同的渠道获取最新版本，根据下载的安装程序指引完成安装。
 
 - Linux：直接执行以下命令可以完成默认安装。
     ```shell
     curl -fsSL https://ollama.com/install.sh | sh
     ```
-- Windows：下载预览版或通过相同的渠道获取最新版本，根据下载的安装程序指引完成安装。
 
 - Docker：Ollama也提供了官方的Docker镜像
   ```shell
