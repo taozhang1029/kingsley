@@ -54,13 +54,13 @@ export default defineConfig({
                     {text: 'IOS', link: '/ios/'},
                 ]
             },
-            {
-                text: '算法',
-                items: [
-                    {text: 'LeetCode', link: '/algorithm/leetcode/'},
-                    {text: '牛客', link: '/algorithm/newcoder/'},
-                ]
-            },
+            // {
+            //     text: '算法',
+            //     items: [
+            //         {text: 'LeetCode', link: '/algorithm/leetcode/'},
+            //         {text: '牛客', link: '/algorithm/newcoder/'},
+            //     ]
+            // },
             {
                 text: '资源',
                 link: '/resource/ai/ollama'
