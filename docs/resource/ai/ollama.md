@@ -85,15 +85,6 @@ Ollama支持多种开源模型，可通过 [ollama.com/library](https://ollama.c
 ## 三、实践
 以Linux系统，使用Google开源模型**Gemma**为例，使用Ollama搭建一个类似于ChatGPT的应用
 
-> 北京时间2月21日晚21点，美国科技巨头谷歌（Google）宣布推出全球性能最强大、轻量级的开源模型系列Gemma，分为2B（20亿参数）和7B（70亿）两种尺寸版本，2B版本甚至可直接在笔记本电脑上运行。  
-> 谷歌表示，Gemma采用与 Gemini 模型相同的研究和技术，由Google DeepMind 和谷歌其他团队开发，专为负责任的 AI开发而打造。谷歌声称，Gemma 模型18个语言理解、推理、数学等关键基准测试中，有11个测试分数超越了Meta Llama-2等更大参数的开源模型。   
-> 平均分数方面，Gemma -7B 的基准测试平均分高达56.4，远超过Llama-13B（52.2）、Mistral-7B（54.0），成为目前全球最强大的开源模型。  
-> 模型架构方面，Gemma基于谷歌Gemini模型以及Transformer自注意力机制的深度学习技术研发，Gemma 2B 和 7B 分别针对来自网络文档、数学和代码的 2T 和 6T 规模英文标注数据进行训练。与Gemini 不同，这些模型不是多模式的，也没有针对多语言任务的最先进性能进行训练。 
-> 不仅如此，Gemma还使用了改进后的多头注意力、RoPE嵌入、GeGLU激活函数等新的技术，旨在文本领域实现通用能力，同时具备最先进的理解和推理技能。   
-> 性能表现方面，根据技术文件，Gemma在MMLU、MBPP等18个基准测试中，有11个测试结果超越了Llama-13B或Mistral-7B等模型。  
-> 自研芯片方面，谷歌Gemma使用自研 AI 加速芯片TPUv5e进行训练。其中7B模型在16个Pods上训练，2B模型在2个Pods上训练，每个 Pod 可占用的 256 个芯片更少，v5e 经过优化，可以成为转换器、文本到图像和卷积神经网络 (CNN) 训练、微调和服务的最大价值产品。 而通过TPUv5e，Gemma模型可在文本领域实现强大的通用能力，同时具备最先进的理解和推理技能。  
-> 谷歌今天还宣布与英伟达（NVIDIA）展开合作。这意味着，Gemma不止使用TPUv5e芯片，而且使用NVIDIA GPU 来优化 Gemma 模型。
-
 ### 1. 安装Ollama
 ```shell
 [root@centos ~]# curl -fsSL https://ollama.com/install.sh | sh
@@ -139,6 +130,20 @@ WARNING: No NVIDIA GPU detected. Ollama will run in CPU-only mode.
 
 ### 2. 安装模型
 例如 Gemma
+> 北京时间2月21日晚21点，美国科技巨头谷歌（Google）宣布推出全球性能最强大、轻量级的开源模型系列Gemma，分为2B（20亿参数）和7B（70亿）两种尺寸版本，2B版本甚至可直接在笔记本电脑上运行。  
+> 谷歌表示，Gemma采用与 Gemini 模型相同的研究和技术，由Google DeepMind 和谷歌其他团队开发，专为负责任的 AI开发而打造。谷歌声称，Gemma 模型18个语言理解、推理、数学等关键基准测试中，有11个测试分数超越了Meta Llama-2等更大参数的开源模型。   
+> 平均分数方面，Gemma -7B 的基准测试平均分高达56.4，远超过Llama-13B（52.2）、Mistral-7B（54.0），成为目前全球最强大的开源模型。  
+> 模型架构方面，Gemma基于谷歌Gemini模型以及Transformer自注意力机制的深度学习技术研发，Gemma 2B 和 7B 分别针对来自网络文档、数学和代码的 2T 和 6T 规模英文标注数据进行训练。与Gemini 不同，这些模型不是多模式的，也没有针对多语言任务的最先进性能进行训练。
+> 不仅如此，Gemma还使用了改进后的多头注意力、RoPE嵌入、GeGLU激活函数等新的技术，旨在文本领域实现通用能力，同时具备最先进的理解和推理技能。   
+> 性能表现方面，根据技术文件，Gemma在MMLU、MBPP等18个基准测试中，有11个测试结果超越了Llama-13B或Mistral-7B等模型。  
+> 自研芯片方面，谷歌Gemma使用自研 AI 加速芯片TPUv5e进行训练。其中7B模型在16个Pods上训练，2B模型在2个Pods上训练，每个 Pod 可占用的 256 个芯片更少，v5e 经过优化，可以成为转换器、文本到图像和卷积神经网络 (CNN) 训练、微调和服务的最大价值产品。 而通过TPUv5e，Gemma模型可在文本领域实现强大的通用能力，同时具备最先进的理解和推理技能。  
+> 谷歌今天还宣布与英伟达（NVIDIA）展开合作。这意味着，Gemma不止使用TPUv5e芯片，而且使用NVIDIA GPU 来优化 Gemma 模型。
+
+[谷歌技术博客——gemma模型](https://blog.google/technology/developers/gemma-open-models/)  
+
+[gemma模型论文原文](https://storage.googleapis.com/deepmind-media/gemma/gemma-report.pdf)
+
+安装并运行gemma模型
 ```shell
 [root@centos ~]# ollama run gemma
 pulling manifest 
