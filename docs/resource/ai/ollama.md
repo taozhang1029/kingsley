@@ -159,7 +159,7 @@ success
 ```
 
 ### 3. 调用模型
-以下测试基于CentOS Stream 8 x86_64，Intel(R) Pentium(R) CPU N3520 @ 2.16GHz 1个物理CPU，4个物理核心，4个逻辑核心，
+以下测试基于CentOS Stream 8 x86_64，Intel(R) Pentium(R) CPU N3520 @ 2.16GHz 1个物理CPU，4个物理核心，4个逻辑核心，8G 内存的机器
 响应耗时较长，建议使用带 Nvidia GPU 的机器
 
 #### a. 使用终端交互调用模型
