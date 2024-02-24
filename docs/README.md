@@ -14,6 +14,6 @@ features:
   details: 小程序、安卓、IOS
 ---
 
-::: slot footer
-MIT Licensed | Copyright © 2024-present [GitHub](https://github.com/taozhang1029)
-:::
+<div style="text-align: center;margin-top: 40px;">
+MIT Licensed | Copyright © 2024-present <a href="https://github.com/taozhang1029" target="_blank">GitHub</a>
+</div>

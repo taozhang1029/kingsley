@@ -1,5 +1,9 @@
 <template>
   <div class="container">
+    <div class="origin" v-show="url">
+      <a :href="url" target="_blank" >查看原题</a>
+      <div class="divider"></div>
+    </div>
     <div class="description">
       <div class="title">描述：</div>
       <slot></slot>
@@ -11,9 +15,9 @@
 
       </slot>
     </div>
-    <div class="divider"></div>
+
     <div class="examples">
-      <div v-for="(example, index) in examplesArray" class="example">
+      <div v-for="(example, index) in examplesArray" class="example card">
         <div class="title">示例 {{ index + 1 }}：</div>
         <!-- 图片 -->
         <div v-show="example.images && example.images.length > 0">
@@ -33,7 +37,6 @@
           <div class="subtitle">解释：</div>
           <div class="io-content">{{ example.description }}</div>
         </div>
-        <div class="divider"></div>
       </div>
     </div>
   </div>
@@ -94,4 +97,13 @@ export default {
     }
   }
 }
+.card {
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+  background-color: #ffffff;
+  overflow: hidden;
+  transition: .3s;
+  padding: 20px;
+}
+
 </style>
