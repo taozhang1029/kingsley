@@ -135,7 +135,7 @@ export default defineUserConfig({
                     children: [
                         ...parseSidebarArrayJson(
                             "docs/algorithm/newcoder",
-                            (filename: string) => filename)
+                            (filename: string) => filename.replace("BM", ""))
                     ]
                 }
             ]

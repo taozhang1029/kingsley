@@ -1,10 +1,9 @@
 ---
-sidebar: auto
-title: 反转链表
+
 ---
 
-## 题干
-<AlgorithmQuestion url="https://www.nowcoder.com/practice/75e878df47f24fdc9dc3e400ec6058ca?tpId=295&tqId=23286&ru=/exam/oj&qru=/ta/format-top101/question-ranking&sourceUrl=%2Fexam%2Foj"
+<AlgorithmQuestion title="反转链表" level="1" 
+url="https://www.nowcoder.com/practice/75e878df47f24fdc9dc3e400ec6058ca?tpId=295&tqId=23286&ru=/exam/oj&qru=/ta/format-top101/question-ranking&sourceUrl=%2Fexam%2Foj"
 examples="[
 {
 'input': '{1,2,3}',

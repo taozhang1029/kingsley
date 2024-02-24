@@ -7,11 +7,11 @@ export function parseSidebarArrayJson(dirPath: string, titleGenerator: Function,
     // 获取文件夹的绝对路径
     const path = resolve(dirPath)
     const mdFileNames = readdirSync(path).filter((filename: string) => filename !== 'README.md' && filename.endsWith(".md"));
-    let children = []
     let routePrefix = dirPath.substring(dirPath.indexOf("/"))
     if (routePrefix.endsWith("/")) {
         routePrefix = routePrefix.substring(0, routePrefix.length - 1)
     }
+    let children = []
     for (let filename of mdFileNames) {
         if (filename === 'README.md' || !filename.endsWith(".md")) {
             continue;
@@ -22,7 +22,7 @@ export function parseSidebarArrayJson(dirPath: string, titleGenerator: Function,
             {
                 text: title,
                 link: routePrefix + '/' + fileSimpleName,
-                autoSidebar: autoSidebar
+                sidebarDepth: 4,
             }
         )
     }

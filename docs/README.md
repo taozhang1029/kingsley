@@ -3,8 +3,10 @@ home: true
 heroImage: /favicon.ico
 heroText: 欢迎来到编程游乐场
 tagline: null
-actionText: 开始游览 →
-actionLink: /resource/ai/ollama/
+actions:
+  - text: 开始游览 →
+    link: /resource/ai/ollama
+    type: primary
 features:
 - title: 后端
   details: Java后端开发涉及的相关技术
@@ -12,8 +14,5 @@ features:
   details: Vue、React等
 - title: 移动端
   details: 小程序、安卓、IOS
+footer: MIT Licensed | Copyright © 2024-present kingsley
 ---
-
-<div style="text-align: center;margin-top: 40px;">
-MIT Licensed | Copyright © 2024-present <a href="https://github.com/taozhang1029" target="_blank">GitHub</a>
-</div>
