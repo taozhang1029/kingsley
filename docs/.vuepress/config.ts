@@ -126,7 +126,8 @@ export default defineUserConfig({
                     children: [
                         ...parseSidebarArrayJson(
                             "docs/algorithm/leetcode/",
-                            (filename: string) => filename.replace("BM", ""))
+                            (filename: string) => filename.replace("BM", ""),
+                            (a, b) => Number(a.match(/\d+/g)) - Number(b.match(/\d+/g)))
                     ]
                 },
                 {
@@ -135,7 +136,8 @@ export default defineUserConfig({
                     children: [
                         ...parseSidebarArrayJson(
                             "docs/algorithm/newcoder",
-                            (filename: string) => filename.replace("BM", ""))
+                            (filename: string) => filename.replace("BM", ""),
+                            (a, b) => Number(a.match(/\d+/g)) - Number(b.match(/\d+/g)))
                     ]
                 }
             ]
