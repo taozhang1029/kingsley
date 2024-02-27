@@ -38,7 +38,7 @@ export default defineUserConfig({
             },
             {
                 text: '算法',
-                link: '/algorithm/leetcode/',
+                link: '/algorithm/',
             },
             {
                 text: '资源',
@@ -121,13 +121,16 @@ export default defineUserConfig({
             ],
             '/algorithm/': [
                 {
+                    text: '算法',
+                    link: '/algorithm/'
+                },
+                {
                     text: 'LeetCode',
                     collapsible: true,
                     children: [
                         ...parseSidebarArrayJson(
                             "docs/algorithm/leetcode/",
-                            (filename: string) => filename.replace("BM", ""),
-                            (a, b) => Number(a.match(/\d+/g)) - Number(b.match(/\d+/g)))
+                            (filename: string) => filename.replace("BM", ""))
                     ]
                 },
                 {
@@ -136,8 +139,7 @@ export default defineUserConfig({
                     children: [
                         ...parseSidebarArrayJson(
                             "docs/algorithm/newcoder",
-                            (filename: string) => filename.replace("BM", ""),
-                            (a, b) => Number(a.match(/\d+/g)) - Number(b.match(/\d+/g)))
+                            (filename: string) => filename.replace("BM", ""))
                     ]
                 }
             ]
