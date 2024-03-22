@@ -200,7 +200,7 @@ Drools规则引擎由三部分构成：
 
 如下是Drools规则引擎的结构图：
 
-![Drools规则引擎的结构图](./Drools.png)
+![Drools规则引擎的结构图](image/Drools.png)
 
 规则引擎执行过程：
 
@@ -372,7 +372,7 @@ Drools支持的比较操作符如下：
     
 ```
 
-![img.png](./img.png)
+![img.png](image/img.png)
 
 ### 7、关键字
 

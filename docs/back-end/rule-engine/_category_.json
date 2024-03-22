@@ -1,0 +1,17 @@
+{
+  "label": "规则引擎",
+  "hidden": [
+    "image"
+  ],
+  "priority": [
+    {
+      "README.md": 5
+    },
+    {
+      "Drools": 4
+    },
+    {
+      "LiteFlow.md": 3
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "hidden": [
+    ".DS_Store"
+  ],
+  "priority": [
+    {
+      "back-end": 5
+    },
+    {
+      "front-end": 4
+    },
+    {
+      "mobile": 3
+    },
+    {
+      "resource": 2
+    },
+    {
+      "algorithm": 1
+    }
+  ]
+}

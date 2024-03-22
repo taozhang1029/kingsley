@@ -86,7 +86,7 @@ Ollama支持多种开源模型，可通过 [ollama.com/library](https://ollama.c
 除了简单的启动模型外，Ollama 可以通过编写 Modelfile 来导入更多的自定义模型， Ollama具备灵活的扩展性，它支持和很多工具集成，除了命令行的使用方式，可以通过配合UI界面，简单快速的打造一个类ChatGPT应用。
 
 ### 3、调用模型
-见[实践-调用模型](./ollama.md#3-调用模型)
+见[实践-调用模型](ollama.md-调用模型)
 
 ## 三、实践
 以Linux系统，使用Google开源模型**Gemma**为例，使用Ollama搭建一个类似于ChatGPT的应用
@@ -545,4 +545,4 @@ Ollama支持中文，只要模型支持即可，如gemma
 ****
 例如 chatbot-ollama
 
-![img.png](./img.png)
+![img.png](image/img.png)

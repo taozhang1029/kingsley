@@ -1,5 +1,5 @@
 ---
-
+title: 1. 反转链表
 ---
 
 <AlgorithmQuestion title="反转链表" level="1" 
@@ -34,9 +34,8 @@ examples="[
 </template>
 </AlgorithmQuestion>
 
-## 题解
+题解
 
-### 1、Java
 ```java
 import java.util.*;
 

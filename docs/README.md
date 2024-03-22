@@ -5,7 +5,7 @@ heroText: 欢迎来到编程游乐场
 tagline: null
 actions:
   - text: 开始游览 →
-    link: /resource/ai/ollama
+    link: /back-end/netty/01-NIO基础
     type: primary
 features:
 - title: 后端
