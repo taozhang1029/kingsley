@@ -752,7 +752,581 @@ public class GatheringWritesTest {
         } catch (IOException e) {
             log.error("error", e);
         }
+    }
+    
+}
+```
 
+## 三、文件编程
+
+### 1、FileChannel
+
+FileChannel 是一个通道，可以读取文件，也可以写入文件。
+
+⚠️ FileChannel 只能工作在阻塞模式下
+
+#### 获取
+
+不能直接打开 FileChannel，必须通过 FileInputStream、FileOutputStream 或者 RandomAccessFile 来获取 FileChannel，它们都有 getChannel 方法
+
+- FileInputStream 获取的 channel 只能读
+- FileOutputStream 获取的 channel 只能写
+- RandomAccessFile 获取的 channel 是否能读写根据构造 RandomAccessFile 时的读写模式决定
+
+#### 读取
+FileChannel 通过read方法读取数据，需要使用 Buffer，返回值表示读到了多少字节，-1 表示到达了文件的末尾
+
+```java
+int readBytes = channel.read(buffer);
+```
+
+#### 写入
+写入的正确姿势如下
+```java
+ByteBuffer buffer = ...;
+buffer.put(...); // 存入数据
+buffer.flip();   // 切换读模式
+
+while(buffer.hasRemaining()) {
+    channel.write(buffer);
+}
+```
+
+在 while 中调用 channel.write 是因为 write 方法并不能保证一次将 buffer 中的内容全部写入 channel
+
+#### 关闭
+FileChannel 通过 close 方法关闭，关闭后不能再读写。调用了 FileInputStream、FileOutputStream 或者 RandomAccessFile 的 close 方法会间接地调用 channel 的 close 方法
+
+#### 位置
+FileChannel 的 position 属性表示当前读取或写入的位置，可以通过调用 position 方法获取或设置
+
+获取当前位置
+```java
+long position = channel.position();
+```
+
+设置当前位置
+```java
+channel.position(100);
+```
+设置当前位置后，再调用 read 方法读取数据，就会从当前位置开始读取。如果设置为文件的末尾
+- 如果是读模式，则返回 -1
+- 如果是写模式，会追加内容，但要注意如果 position 超过了文件末尾，再写入时在新内容和原末尾之间会有空洞（00）
+
+#### 获取文件大小
+FileChannel 的 size 属性表示文件的大小，可以通过调用 size 方法获取
+
+```java
+long size = channel.size();
+```
+
+#### 强制写入
+操作系统出于性能的考虑，会将数据缓存，不是立刻写入磁盘。可以调用 force(true) 方法将文件内容和元数据（文件的权限等信息）立刻写入磁盘
+```java
+channel.force(true);
+```
+
+### 2、两个Channel传输数据
+
+1. 创建一个 FileChannel，用于读取文件内容
+2. 创建一个 FileChannel，用于写入文件内容
+3. 调用 transferTo 方法，将一个 FileChannel 的数据写入另一个 FileChannel
+```java
+String FROM = "helloword/data.txt";
+String TO = "helloword/to.txt";
+try (FileChannel from = new FileInputStream(FROM).getChannel();
+     FileChannel to = new FileOutputStream(TO).getChannel();) {
+    from.transferTo(0, from.size(), to);
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+这种方式比直接操作文件流的效率更高，底层会利用操作系统的零拷贝进行优化。
+
+一次最多传输 2G 的数据，如果要传输的数据量超过 2G，可以多次调用 transferTo 方法
+
+```java
+public class TestFileChannelTransferTo {
+    public static void main(String[] args) {
+        try (
+                FileChannel from = new FileInputStream("data.txt").getChannel();
+                FileChannel to = new FileOutputStream("to.txt").getChannel();
+        ) {
+            // 效率高，底层会利用操作系统的零拷贝进行优化
+            long size = from.size();
+            // left 变量代表还剩余多少字节
+            for (long left = size; left > 0; ) {
+                System.out.println("position:" + (size - left) + " left:" + left);
+                left -= from.transferTo((size - left), left, to);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 ```
+
+### 3、Path
+Path 是 Java 7 新增的类，用于表示文件路径；Paths 是 Path 的工具类，用于创建 Path 对象
+```java
+Path source = Paths.get("1.txt"); // 相对路径 使用 user.dir 环境变量来定位 1.txt
+
+Path source = Paths.get("d:\\1.txt"); // 绝对路径 代表了  d:\1.txt
+
+Path source = Paths.get("d:/1.txt"); // 绝对路径 同样代表了  d:\1.txt
+
+Path projects = Paths.get("d:\\data", "projects"); // 代表了  d:\data\projects
+```
+
+- . 代表了当前路径
+- .. 代表了上一级路径
+
+例如目录结构如下
+```shell
+d:
+    |- data
+        |- projects
+            |- a
+            |- b
+```
+
+代码
+
+```java
+Path path = Paths.get("d:\\data\\projects\\a\\..\\b");
+System.out.println(path);
+System.out.println(path.normalize()); // 正常化路径
+```
+
+会输出
+
+```shell
+d:\data\projects\a\..\b
+d:\data\projects\b
+```
+
+### 4、Files
+Files 是一个工具类，提供了很多实用的方法，例如创建文件、删除文件、复制文件、重命名文件、获取文件的属性、获取文件的大小、判断文件是否存在等
+
+- 判断文件是否存在
+```java
+Path path = Paths.get("helloword/data.txt");
+System.out.println(Files.exists(path));
+```
+
+- 创建一级目录
+```java
+Path path = Paths.get("helloword/d1");
+Files.createDirectory(path);
+```
+如果目录已存在，会抛异常 FileAlreadyExistsException  
+不能一次创建多级目录，否则会抛异常 NoSuchFileException
+
+- 创建多级目录
+```java
+Path path = Paths.get("helloword/d1/d2");
+Files.createDirectories(path);
+```
+
+- 拷贝文件
+```java
+Path source = Paths.get("helloword/data.txt");
+Path target = Paths.get("helloword/target.txt");
+
+Files.copy(source, target);
+```
+如果文件已存在，会抛异常 FileAlreadyExistsException
+> 如果希望用 source 覆盖掉 target，需要用 StandardCopyOption 来控制
+> ```java
+> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+> ```
+
+- 移动文件
+```java
+Path source = Paths.get("helloword/data.txt");
+Path target = Paths.get("helloword/data.txt");
+
+Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+```
+StandardCopyOption.ATOMIC_MOVE 保证文件移动的原子性
+
+- 删除文件
+```java
+Path target = Paths.get("helloword/target.txt");
+
+Files.delete(target);
+```
+如果文件不存在，会抛异常 NoSuchFileException
+
+- 删除目录
+```java
+Path target = Paths.get("helloword/d1");
+
+Files.delete(target);
+```
+如果目录还有内容，会抛异常 DirectoryNotEmptyException
+
+- 遍历目录文件
+```java
+public static void main(String[] args) throws IOException {
+    Path path = Paths.get("C:\\Program Files\\Java\\jdk1.8.0_91");
+    AtomicInteger dirCount = new AtomicInteger();
+    AtomicInteger fileCount = new AtomicInteger();
+    Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) 
+            throws IOException {
+            System.out.println(dir);
+            dirCount.incrementAndGet();
+            return super.preVisitDirectory(dir, attrs);
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) 
+            throws IOException {
+            System.out.println(file);
+            fileCount.incrementAndGet();
+            return super.visitFile(file, attrs);
+        }
+    });
+    System.out.println(dirCount); // 133
+    System.out.println(fileCount); // 1479
+}
+```
+
+统计 jar 的数目
+
+```java
+Path path = Paths.get("C:\\Program Files\\Java\\jdk1.8.0_91");
+AtomicInteger fileCount = new AtomicInteger();
+Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) 
+        throws IOException {
+        if (file.toFile().getName().endsWith(".jar")) {
+            fileCount.incrementAndGet();
+        }
+        return super.visitFile(file, attrs);
+    }
+});
+System.out.println(fileCount); // 724
+```
+
+- 删除多级目录
+```java
+Path path = Paths.get("d:\\a");
+Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) 
+        throws IOException {
+        Files.delete(file);
+        return super.visitFile(file, attrs);
+    }
+
+    @Override
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) 
+        throws IOException {
+        Files.delete(dir);
+        return super.postVisitDirectory(dir, exc);
+    }
+});
+```
+
+⚠️ 删除很危险
+> 删除是危险操作，确保要递归删除的文件夹没有重要内容
+
+- 拷贝多级目录
+
+```java
+long start = System.currentTimeMillis();
+String source = "D:\\Snipaste-1.16.2-x64";
+String target = "D:\\Snipaste-1.16.2-x64aaa";
+
+Files.walk(Paths.get(source)).forEach(path -> {
+    try {
+        String targetName = path.toString().replace(source, target);
+        // 是目录
+        if (Files.isDirectory(path)) {
+            Files.createDirectory(Paths.get(targetName));
+        }
+        // 是普通文件
+        else if (Files.isRegularFile(path)) {
+            Files.copy(path, Paths.get(targetName));
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+});
+long end = System.currentTimeMillis();
+System.out.println(end - start);
+```
+
+## 四、网络编程
+
+### 1、非阻塞 vs 阻塞
+#### 阻塞
+当线程调用某个方法时，该方法会立即返回，线程会等待某个事件发生，事件发生后，线程才会继续执行。
+- 阻塞模式下，相关方法都会导致线程暂停
+  - ServerSocketChannel.accept 会在没有连接建立时让线程暂停
+  - SocketChannel.read 会在没有数据可读时让线程暂停
+  - 阻塞的表现其实就是线程暂停了，暂停期间不会占用 cpu，但线程相当于闲置
+- 单线程下，阻塞方法之间相互影响，几乎不能正常工作，需要多线程支持
+- 但多线程下，有新的问题，体现在以下方面
+  - 32 位 jvm 一个线程 320k，64 位 jvm 一个线程 1024k，如果连接数过多，必然导致 OOM，并且线程太多，反而会因为频繁上下文切换导致性能降低
+  - 可以采用线程池技术来减少线程数和线程上下文切换，但治标不治本，如果有很多连接建立，但长时间 inactive，会阻塞线程池中所有线程，因此不适合长连接，只适合短连接
+
+服务器端
+```java
+// 使用 nio 来理解阻塞模式, 单线程
+// 0. ByteBuffer
+ByteBuffer buffer = ByteBuffer.allocate(16);
+// 1. 创建了服务器
+ServerSocketChannel ssc = ServerSocketChannel.open();
+
+// 2. 绑定监听端口
+ssc.bind(new InetSocketAddress(8080));
+
+// 3. 连接集合
+List<SocketChannel> channels = new ArrayList<>();
+while (true) {
+    // 4. accept 建立与客户端连接， SocketChannel 用来与客户端之间通信
+    log.debug("connecting...");
+    SocketChannel sc = ssc.accept(); // 阻塞方法，线程停止运行
+    log.debug("connected... {}", sc);
+    channels.add(sc);
+    for (SocketChannel channel : channels) {
+        // 5. 接收客户端发送的数据
+        log.debug("before read... {}", channel);
+        channel.read(buffer); // 阻塞方法，线程停止运行
+        buffer.flip();
+        debugRead(buffer);
+        buffer.clear();
+        log.debug("after read...{}", channel);
+    }
+}
+```
+客户端
+```java
+SocketChannel sc = SocketChannel.open();
+sc.connect(new InetSocketAddress("localhost", 8080));
+System.out.println("waiting...");
+```
+
+debug模式启动，通过IDEA的 Evaluate Expression 功能通过 sc.write(StandardCharsets.UTF_8.encode("hello world")) 向服务器发送数据
+
+#### 非阻塞
+
+- 非阻塞模式下，相关方法都会不会让线程暂停
+  - 在 ServerSocketChannel.accept 在没有连接建立时，会返回 null，继续运行
+  - SocketChannel.read 在没有数据可读时，会返回 0，但线程不必阻塞，可以去执行其它 SocketChannel 的 read 或是去执行 ServerSocketChannel.accept
+  - 写数据时，线程只是等待数据写入 Channel 即可，无需等 Channel 通过网络把数据发送出去
+- 但非阻塞模式下，即使没有连接建立，和可读数据，线程仍然在不断运行，白白浪费了 cpu
+- 数据复制过程中，线程实际还是阻塞的（AIO 改进的地方）
+
+服务器端 ssc.configureBlocking(false) 设置非阻塞模式，客户端代码不变
+```java
+// 使用 nio 来理解非阻塞模式, 单线程
+// 0. ByteBuffer
+ByteBuffer buffer = ByteBuffer.allocate(16);
+// 1. 创建了服务器
+ServerSocketChannel ssc = ServerSocketChannel.open();
+ssc.configureBlocking(false); // 非阻塞模式
+// 2. 绑定监听端口
+ssc.bind(new InetSocketAddress(8080));
+// 3. 连接集合
+List<SocketChannel> channels = new ArrayList<>();
+while (true) {
+    // 4. accept 建立与客户端连接， SocketChannel 用来与客户端之间通信
+    SocketChannel sc = ssc.accept(); // 非阻塞，线程还会继续运行，如果没有连接建立，但sc是null
+    if (sc != null) {
+        log.debug("connected... {}", sc);
+        sc.configureBlocking(false); // 非阻塞模式
+        channels.add(sc);
+    }
+    for (SocketChannel channel : channels) {
+        // 5. 接收客户端发送的数据
+        int read = channel.read(buffer);// 非阻塞，线程仍然会继续运行，如果没有读到数据，read 返回 0
+        if (read > 0) {
+            buffer.flip();
+            debugRead(buffer);
+            buffer.clear();
+            log.debug("after read...{}", channel);
+        }
+    }
+}
+```
+
+#### 多路复用
+单线程可以配合 Selector 完成对多个 Channel 可读写事件的监控，这称之为多路复用
+- 多路复用仅针对网络 IO、普通文件 IO 没法利用多路复用
+- 如果不用 Selector 的非阻塞模式，线程大部分时间都在做无用功，而 Selector 能够保证
+  - 有可连接事件时才去连接
+  - 有可读事件才去读取
+  - 有可写事件才去写入
+    - 限于网络传输能力，Channel 未必时时可写，一旦 Channel 可写，会触发 Selector 的可写事件
+
+### 2、Selector
+<div>
+<mermaid>
+{{`
+graph TD
+subgraph selector 版
+thread --> selector
+selector --> c1(channel)
+selector --> c2(channel)
+selector --> c3(channel)
+end
+`}}
+</mermaid>
+</div>
+
+好处
+- 一个线程配合 selector 就可以监控多个 channel 的事件，事件发生线程才去处理。避免非阻塞模式下所做无用功
+- 让这个线程能够被充分利用 
+- 节约了线程的数量 
+- 减少了线程上下文切换
+
+#### 创建
+```java
+Selector selector = Selector.open();
+```
+
+####  绑定(注册) Channel 事件
+也称之为注册事件，绑定的事件 selector 才会关心
+```java
+channel.configureBlocking(false);
+SelectionKey key = channel.register(selector, 绑定事件);
+```
+- channel 必须工作在非阻塞模式
+- FileChannel 没有非阻塞模式，因此不能配合 selector 一起使用
+- 绑定的事件类型可以有
+  - connect - 客户端连接成功时触发
+  - accept - 服务器端成功接受连接时触发
+  - read - 数据可读入时触发，有因为接收能力弱，数据暂不能读入的情况
+  - write - 数据可写出时触发，有因为发送能力弱，数据暂不能写出的情况
+
+#### 监听 Channel 事件
+可以通过下面三种方法来监听是否有事件发生，方法的返回值代表有多少 channel 发生了事件
+- 方法1，阻塞直到绑定事件发生
+```java
+int count = selector.select();
+```
+- 方法2，阻塞直到绑定事件发生，或是超时（时间单位为 ms）
+```java
+int count = selector.select(long timeout);
+```
+- 方法3，不会阻塞，也就是不管有没有事件，立刻返回，自己根据返回值检查是否有事件
+```java
+int count = selector.selectNow();
+```
+
+#### 💡 select 何时不阻塞
+> - 事件发生时 
+>   - 客户端发起连接请求，会触发 accept 事件 
+>   - 客户端发送数据过来，客户端正常、异常关闭时，都会触发 read 事件，另外如果发送的数据大于 buffer 缓冲区，会触发多次读取事件 
+>   - channel 可写，会触发 write 事件 
+>   - 在 linux 下 nio bug 发生时 
+> - 调用 selector.wakeup()
+> - 调用 selector.close()
+> - selector 所在线程 interrupt
+
+### 3、处理 accept 事件
+客户端代码为
+```java
+public class Client {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 8080)) {
+            System.out.println(socket);
+            socket.getOutputStream().write("world".getBytes());
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+服务器端代码为
+```java
+@Slf4j
+public class ChannelDemo6 {
+    public static void main(String[] args) {
+        try (ServerSocketChannel channel = ServerSocketChannel.open()) {
+            channel.bind(new InetSocketAddress(8080));
+            System.out.println(channel);
+            Selector selector = Selector.open();
+            channel.configureBlocking(false);
+            channel.register(selector, SelectionKey.OP_ACCEPT);
+
+            while (true) {
+                // select 方法：没有事件发生，线程阻塞；有事件，线程才会恢复运行；在事件未处理时，它不会阻塞
+                int count = selector.select();
+                // int count = selector.selectNow();
+                log.debug("select count: {}", count);
+                // if(count <= 0) {
+                  //  continue;
+                // }
+
+                // 获取所有事件
+                Set<SelectionKey> keys = selector.selectedKeys();
+
+                // 遍历所有事件，逐一处理；处理完毕需要删除，所以只能使用迭代器
+                Iterator<SelectionKey> iter = keys.iterator();
+                while (iter.hasNext()) {
+                    SelectionKey key = iter.next();
+                    // 判断事件类型
+                    if (key.isAcceptable()) {
+                        // 因为注册该 Selector 的是 ServerSocketChannel 类型的Channel
+                        ServerSocketChannel c = (ServerSocketChannel) key.channel();
+                        // 事件发生后要么处理，要么取消
+                        SocketChannel sc = c.accept();
+                        log.debug("{}", sc);
+                    }
+                    // 处理完毕，必须将事件移除
+                    iter.remove();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+#### 💡 事件发生后能否不处理
+> 事件发生后，要么处理，要么取消（cancel），不能什么都不做，否则下次该事件仍会触发，这是因为 nio 底层使用的是水平触发
+> 
+> **水平触发 与 边缘触发**
+> 
+> 1.水平触发（LT）
+当被监控的文件描述符上有可读写事件发生时，会通知用户程序去读写，他会一直通知用户，如果这个描述符是用户不关心的，它每次都返回通知用户，则会导致用户对于关心的描述符的处理效率降低。
+> 
+> 复用型IO中的select和poll都是使用的水平触发模式。
+> 
+> 2.边缘触发（ET）
+> 当被监控的文件描述符上有可读写事件发生时，会通知用户程序去读写，它只会通知用户进程一次，这需要用户一次把内容读取完，相当于水平触发，效率更高。如果用户一次没有读完数据，再次请求时，不会立即返回，需要等待下一次的新的数据到来时才会返回，这次返回的内容包括上次未取完的数据
+> 
+> epoll既支持水平触发也支持边缘触发，默认是水平触发。
+>   
+> 3.比较
+> 水平触发是状态达到后，可以多次取数据。这种模式下要注意多次读写的情况下，效率和资源利用率情况。
+> 
+> 边缘触发数状态改变一次，取一次数据。这种模式下读写数据要注意一次是否能读写完成。
+> 
+> 4.ET模式带来的问题
+> 因为只有当缓冲区中数据由无到有，由少变多时才会区读取数据，
+> 所以一次要将缓冲区中的数据读完，否则剩下的数据可能就读不到了。
+> 正常的读取数据时，我们若是要保证一次把缓冲区的数据读完，意为本次读被阻塞时即缓冲区中没有数据了，可是我们 epoll 服务器要处理多个用户的请求，read()不能被阻塞，所以采用非阻塞轮询的方式读取数据。
+> 
+> 若轮询的将数据读完，对方给我们发9.5k的数据，我们采取每次读取1k的方式进行轮询读取，在读完9k的时候，下一次我们读到的数据为0.5k，我们就知道缓冲区中数据已经读完了就停止本次轮询。
+> 但还有一种情况，对方给我们发的数据为10k,我们采取每次读取1k的方式轮询的读取数据，当我们已经读取了10k的时候，并不知道有没有数据了，我们仍旧还要尝试读取数据，这时read()就被阻塞了。
+> 
+> 5.epoll应用场景  
+> （1） 适合用epoll的应用场景：对于连接特别多，活跃的连接特别少，这种情况等的时间特别久，典型的应用场景为一个需要处理上万的连接服务器，例如各种app的入口服务器，例如qq
+> 
+> （2）不适合epoll的场景：连接比较少，数据量比较大，例如ssh
+> 
+> epoll 的惊群问题：因为epoll 多用于 多个连接，只有少数活跃的场景，但是万一某一时刻，epoll 等的上千个文件描述符都就绪了，这时候epoll 要进行大量的I/O,此时压力太大。
+
+### 4、处理 read 事件
