@@ -4,23 +4,26 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import {Mermaid} from "mermaid";
+
 export default {
+  name: "mermaid",
   mounted() {
-    import("mermaid/dist/mermaid").then((m) => {
-      m.initialize({
-        startOnLoad: true,
-      });
-      m.init();
-    });
+    this.importMermaid()
   },
   updated() {
-    import("mermaid/dist/mermaid").then((m) => {
-      m.initialize({
-        startOnLoad: true,
+    this.importMermaid()
+  },
+  methods: {
+    importMermaid() {
+      (import("mermaid/dist/mermaid") as Promise<any>).then((m: Mermaid) => {
+        m.initialize({
+          startOnLoad: true
+        })
+        m.run();
       });
-      m.init();
-    });
+    }
   }
 };
 </script>

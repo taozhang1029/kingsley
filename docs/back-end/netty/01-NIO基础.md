@@ -1,3 +1,7 @@
+---
+author: kingsley
+---
+
 # NIO基础
 
 non-blocking IO 非阻塞IO
@@ -50,16 +54,14 @@ Selector单从字面意思上不好理解，需要结合服务器的设计演化
 
 #### 多线程版设计
 
-<div style="margin-top: 10px;">
 <mermaid>
 {{`
-flowchart TB
+graph TB
      thread1 --> socket1
      thread2 --> socket2
      thread3 --> socket3
 `}}
 </mermaid>
-</div>
 
 ⚠️ 多线程版缺点
 - 内存占用高（创建大量线程）
@@ -71,7 +73,7 @@ flowchart TB
 <div style="margin-top: 10px;">
 <mermaid>
 {{`
-flowchart TB
+graph TB
    thread1 --> socket1
    thread1 .-> socket3
    thread2 --> socket2
@@ -91,7 +93,7 @@ Selector的作用就是配合一个线程来管理多个Channel，获取这些Ch
 <div style="margin-top: 10px;">
 <mermaid>
 {{`
-flowchart TB
+graph TB
   thread --> selector
   selector --> channel1
   selector --> channel2
@@ -1330,3 +1332,4 @@ public class ChannelDemo6 {
 > epoll 的惊群问题：因为epoll 多用于 多个连接，只有少数活跃的场景，但是万一某一时刻，epoll 等的上千个文件描述符都就绪了，这时候epoll 要进行大量的I/O,此时压力太大。
 
 ### 4、处理 read 事件
+TODO

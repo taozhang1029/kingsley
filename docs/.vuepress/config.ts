@@ -2,6 +2,7 @@ import {viteBundler} from '@vuepress/bundler-vite'
 import {defineUserConfig} from 'vuepress'
 import themeSidebar from 'vuepress-theme-sidebar';
 import {registerComponentsPlugin} from '@vuepress/plugin-register-components'
+import { photoSwipePlugin } from '@vuepress/plugin-photo-swipe'
 import {path} from '@vuepress/utils'
 
 export default defineUserConfig({
@@ -14,7 +15,8 @@ export default defineUserConfig({
     plugins: [
         registerComponentsPlugin({
             componentsDir: path.resolve('docs/.vuepress/components'),
-        })
+        }),
+        photoSwipePlugin(),
     ],
     theme: themeSidebar({
         // string | boolean
@@ -26,7 +28,6 @@ export default defineUserConfig({
                 link: 'https://github.com/taozhang1029',
             },
         ],
-        sidebarDepth: 4,
-        sidebarType: "left"
+        // sidebarType: "left"
     })
 })
