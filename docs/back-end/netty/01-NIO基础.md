@@ -1556,3 +1556,288 @@ public static void main(String[] args) throws IOException {
     }
 }
 ```
+
+客户端
+
+```java
+SocketChannel sc = SocketChannel.open();
+sc.connect(new InetSocketAddress("localhost", 8080));
+SocketAddress address = sc.getLocalAddress();
+// sc.write(Charset.defaultCharset().encode("hello\nworld\n"));
+sc.write(Charset.defaultCharset().encode("0123\n456789abcdef"));
+sc.write(Charset.defaultCharset().encode("0123456789abcdef3333\n"));
+System.in.read();
+```
+
+#### ByteBuffer 大小分配
+- 每个 channel 都需要记录可能被切分的消息，因为 ByteBuffer 不能被多个 channel 共同使用，因此需要为每个 channel 维护一个独立的 ByteBuffer
+- ByteBuffer 不能太大，比如一个 ByteBuffer 1Mb 的话，要支持百万连接就要 1Tb 内存，因此需要设计大小可变的 ByteBuffer
+  - 一种思路是首先分配一个较小的 buffer，例如 4k，如果发现数据不够，再分配 8k 的 buffer，将 4k buffer 内容拷贝至 8k buffer，优点是消息连续容易处理，缺点是数据拷贝耗费性能，参考实现 [http://tutorials.jenkov.com/java-performance/resizable-array.html](http://tutorials.jenkov.com/java-performance/resizable-array.html)
+  - 另一种思路是用多个数组组成 buffer，一个数组不够，把多出来的内容写入新的数组，与前面的区别是消息存储不连续解析复杂，优点是避免了拷贝引起的性能损耗
+
+### 5、处理 write 事件
+#### 一次无法写完例子
+- 非阻塞模式下，无法保证把 buffer 中所有数据都写入 channel，因此需要追踪 write 方法的返回值（代表实际写入字节数）
+- 用 selector 监听所有 channel 的可写事件，每个 channel 都需要一个 key 来跟踪 buffer，但这样又会导致占用内存过多，就有两阶段策略
+  - 当消息处理器第一次写入消息时，才将 channel 注册到 selector 上
+  - selector 检查 channel 上的可写事件，如果所有的数据写完了，就取消 channel 的注册
+  - 如果不取消，会每次可写均会触发 write 事件
+
+服务端代码
+```java
+public class WriteServer {
+
+    public static void main(String[] args) throws IOException {
+        ServerSocketChannel ssc = ServerSocketChannel.open();
+        ssc.configureBlocking(false);
+        ssc.bind(new InetSocketAddress(8080));
+
+        Selector selector = Selector.open();
+        ssc.register(selector, SelectionKey.OP_ACCEPT);
+
+        while(true) {
+            selector.select();
+
+            Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+            while (iter.hasNext()) {
+                SelectionKey key = iter.next();
+                iter.remove();
+                if (key.isAcceptable()) {
+                    SocketChannel sc = ssc.accept();
+                    sc.configureBlocking(false);
+                    SelectionKey sckey = sc.register(selector, SelectionKey.OP_READ);
+                    // 1. 向客户端发送内容
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < 3000000; i++) {
+                        sb.append("a");
+                    }
+                    ByteBuffer buffer = Charset.defaultCharset().encode(sb.toString());
+                    int write = sc.write(buffer);
+                    // 3. write 表示实际写了多少字节
+                    System.out.println("实际写入字节:" + write);
+                    // 4. 如果有剩余未读字节，才需要关注写事件
+                    if (buffer.hasRemaining()) {
+                        // read 1  write 4
+                        // 在原有关注事件的基础上，多关注 写事件
+                        sckey.interestOps(sckey.interestOps() + SelectionKey.OP_WRITE);
+                        // 把 buffer 作为附件加入 sckey
+                        sckey.attach(buffer);
+                    }
+                } else if (key.isWritable()) {
+                    ByteBuffer buffer = (ByteBuffer) key.attachment();
+                    SocketChannel sc = (SocketChannel) key.channel();
+                    int write = sc.write(buffer);
+                    System.out.println("实际写入字节:" + write);
+                    if (!buffer.hasRemaining()) { // 写完了
+                        key.interestOps(key.interestOps() - SelectionKey.OP_WRITE);
+                        key.attach(null);
+                    }
+                }
+            }
+        }
+    }
+```
+
+客户端代码
+
+```java
+public class WriteClient {
+    public static void main(String[] args) throws IOException {
+        Selector selector = Selector.open();
+        SocketChannel sc = SocketChannel.open();
+        sc.configureBlocking(false);
+        sc.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+        sc.connect(new InetSocketAddress("localhost", 8080));
+        int count = 0;
+        while (true) {
+            selector.select();
+            Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+            while (iter.hasNext()) {
+                SelectionKey key = iter.next();
+                iter.remove();
+                if (key.isConnectable()) {
+                    System.out.println(sc.finishConnect());
+                } else if (key.isReadable()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
+                    count += sc.read(buffer);
+                    buffer.clear();
+                    System.out.println(count);
+                }
+            }
+        }
+    }
+}
+```
+
+#### 💡 write 为何要取消
+只要向 channel 发送数据时，socket 缓冲可写，这个事件会频繁触发，因此应当只在 socket 缓冲区写不下时再关注可写事件，数据写完之后再取消关注
+
+### 6、更进一步
+
+#### 💡 利用多线程优化
+> 现在都是多核 cpu，设计时要充分考虑别让 cpu 的力量被白白浪费
+前面的代码只有一个选择器，没有充分利用多核 cpu，如何改进呢？
+
+分两组选择器
+- 单线程配一个选择器，专门处理 accept 事件
+- 创建 cpu 核心数的线程，每个线程配一个选择器，轮流处理 read和write 事件
+
+服务端代码
+```java
+public class ChannelDemo7 {
+    public static void main(String[] args) throws IOException {
+      ServerSocketChannel ssc = ServerSocketChannel.open();
+      ssc.bind(new InetSocketAddress(8080));
+      ssc.configureBlocking(false);
+      boss = Selector.open();
+      SelectionKey ssckey = ssc.register(boss, 0, null);
+      ssckey.interestOps(SelectionKey.OP_ACCEPT);
+      WorkerEventLoop[] workers = new WorkerEventLoop[2];
+      for (int i = 0; i < workerEventLoops.length; i++) {
+        workers[i] = new WorkerEventLoop(i);
+      }
+      while (true) {
+        try {
+          boss.select();
+          Iterator<SelectionKey> iter = boss.selectedKeys().iterator();
+          while (iter.hasNext()) {
+            SelectionKey key = iter.next();
+            iter.remove();
+            if (key.isAcceptable()) {
+              ServerSocketChannel c = (ServerSocketChannel) key.channel();
+              SocketChannel sc = c.accept();
+              sc.configureBlocking(false);
+              log.debug("{} connected", sc.getRemoteAddress());
+              workers[index.getAndIncrement() % workers.length].register(sc);
+            }
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+
+    @Slf4j
+    static class WorkerEventLoop implements Runnable {
+        private Selector worker;
+        private volatile boolean start = false;
+        private int index;
+
+        private final ConcurrentLinkedQueue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+
+        public WorkerEventLoop(int index) {
+            this.index = index;
+        }
+
+        public void register(SocketChannel sc) throws IOException {
+            if (!start) {
+                worker = Selector.open();
+                new Thread(this, "worker-" + index).start();
+                start = true;
+            }
+            tasks.add(() -> {
+                try {
+                    SelectionKey sckey = sc.register(worker, 0, null);
+                    sckey.interestOps(SelectionKey.OP_READ);
+                    worker.selectNow();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            worker.wakeup();
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    worker.select();
+                    Runnable task = tasks.poll();
+                    if (task != null) {
+                        task.run();
+                    }
+                    Set<SelectionKey> keys = worker.selectedKeys();
+                    Iterator<SelectionKey> iter = keys.iterator();
+                    while (iter.hasNext()) {
+                        SelectionKey key = iter.next();
+                        if (key.isReadable()) {
+                            SocketChannel sc = (SocketChannel) key.channel();
+                            ByteBuffer buffer = ByteBuffer.allocate(128);
+                            try {
+                                int read = sc.read(buffer);
+                                if (read == -1) {
+                                    key.cancel();
+                                    sc.close();
+                                } else {
+                                    buffer.flip();
+                                    log.debug("{} message:", sc.getRemoteAddress());
+                                    debugAll(buffer);
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                key.cancel();
+                                sc.close();
+                            }
+                        }
+                        iter.remove();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
+```
+
+#### 💡 如何拿到 cpu 个数
+> - Runtime.getRuntime().availableProcessors() 如果工作在 docker 容器下，因为容器不是物理隔离的，会拿到物理 cpu 个数，而不是容器申请时的个数
+> - 这个问题直到 jdk 10 才修复，使用 jvm 参数 UseContainerSupport 配置， 默认开启
+
+### 7、UDP
+- UDP 是无连接的，client 发送数据不会管 server 是否开启
+- server 这边的 receive 方法会将接收到的数据存入 byte buffer，但如果数据报文超过 buffer 大小，多出来的数据会被默默抛弃
+
+首先启动服务器端
+```java
+public class UdpServer {
+    public static void main(String[] args) {
+        try (DatagramChannel channel = DatagramChannel.open()) {
+            channel.socket().bind(new InetSocketAddress(9999));
+            System.out.println("waiting...");
+            ByteBuffer buffer = ByteBuffer.allocate(32);
+            channel.receive(buffer);
+            buffer.flip();
+            debug(buffer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+运行客户端
+```java
+public class UdpClient {
+    public static void main(String[] args) {
+        try (DatagramChannel channel = DatagramChannel.open()) {
+            ByteBuffer buffer = StandardCharsets.UTF_8.encode("hello");
+            InetSocketAddress address = new InetSocketAddress("localhost", 9999);
+            channel.send(buffer, address);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+接下来服务器端输出
+
+```shell
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 68 65 6c 6c 6f                                  |hello           |
++--------+-------------------------------------------------+----------------+
+
+```
