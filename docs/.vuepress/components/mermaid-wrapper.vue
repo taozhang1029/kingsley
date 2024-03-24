@@ -1,6 +1,8 @@
 <template>
-  <div class="mermaid">
-    <slot></slot>
+  <div>
+    <slot>
+      <div class="dsl">{{dsl}}</div>
+    </slot>
   </div>
 </template>
 
@@ -9,6 +11,12 @@ import {Mermaid} from "mermaid";
 
 export default {
   name: "mermaid",
+  props: {
+    dsl: {
+      type: String,
+      default: ""
+    }
+  },
   mounted() {
     this.importMermaid()
   },
@@ -21,7 +29,9 @@ export default {
         m.initialize({
           startOnLoad: true
         })
-        m.run();
+        m.run({
+          querySelector: '.dsl'
+        });
       });
     }
   }

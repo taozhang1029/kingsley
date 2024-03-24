@@ -54,14 +54,15 @@ Selector单从字面意思上不好理解，需要结合服务器的设计演化
 
 #### 多线程版设计
 
-<mermaid>
-{{`
-graph TB
+<div>
+<mermaid-wrapper dsl="
+flowchart TB
      thread1 --> socket1
      thread2 --> socket2
      thread3 --> socket3
-`}}
-</mermaid>
+">
+</mermaid-wrapper>
+</div>
 
 ⚠️ 多线程版缺点
 - 内存占用高（创建大量线程）
@@ -71,15 +72,14 @@ graph TB
 #### 线程池版设计
 
 <div style="margin-top: 10px;">
-<mermaid>
-{{`
-graph TB
+<mermaid-wrapper dsl="
+flowchart TB
    thread1 --> socket1
    thread1 .-> socket3
    thread2 --> socket2
    thread2 .-> socket4
-`}}
-</mermaid>
+">
+</mermaid-wrapper>
 </div>
 
 ⚠️ 线程池版缺点
@@ -91,15 +91,14 @@ graph TB
 Selector的作用就是配合一个线程来管理多个Channel，获取这些Channel上发生的事件，这些Channel工作在非阻塞模式下，不会让线程吊死在一个Channel上。适合连接数特别多，但是每个连接的流量都比较小的场景。
 
 <div style="margin-top: 10px;">
-<mermaid>
-{{`
-graph TB
+<mermaid-wrapper dsl="
+flowchart TB
   thread --> selector
   selector --> channel1
   selector --> channel2
   selector --> channel3
-`}}
-</mermaid>
+">
+</mermaid-wrapper>
 </div>
 
 调用Selector的select()方法会阻塞直到Channel上发生读写就绪事件，当发生事件时，select方法就会返回这些事件交给thread处理
@@ -215,7 +214,7 @@ public class FileChannelByteBufferTest {
 Process finished with exit code 0
 ```
 
-### 1、ByteBuffer的正确使用姿势
+### 1、ByteBuffer的正确使用
 
 1. 向 buffer 写入数据，例如调用 channel.read(buffer)
 2. 调用 flip() 切换至读模式
@@ -1170,17 +1169,15 @@ while (true) {
 
 ### 2、Selector
 <div>
-<mermaid>
-{{`
-graph TD
+<mermaid-wrapper dsl="
+flowchart TD
 subgraph selector 版
 thread --> selector
 selector --> c1(channel)
 selector --> c2(channel)
 selector --> c3(channel)
-end
-`}}
-</mermaid>
+end">
+</mermaid-wrapper>
 </div>
 
 好处
@@ -1323,13 +1320,239 @@ public class ChannelDemo6 {
 > 
 > 若轮询的将数据读完，对方给我们发9.5k的数据，我们采取每次读取1k的方式进行轮询读取，在读完9k的时候，下一次我们读到的数据为0.5k，我们就知道缓冲区中数据已经读完了就停止本次轮询。
 > 但还有一种情况，对方给我们发的数据为10k,我们采取每次读取1k的方式轮询的读取数据，当我们已经读取了10k的时候，并不知道有没有数据了，我们仍旧还要尝试读取数据，这时read()就被阻塞了。
-> 
+>
 > 5.epoll应用场景  
 > （1） 适合用epoll的应用场景：对于连接特别多，活跃的连接特别少，这种情况等的时间特别久，典型的应用场景为一个需要处理上万的连接服务器，例如各种app的入口服务器，例如qq
-> 
+>
 > （2）不适合epoll的场景：连接比较少，数据量比较大，例如ssh
-> 
+>
 > epoll 的惊群问题：因为epoll 多用于 多个连接，只有少数活跃的场景，但是万一某一时刻，epoll 等的上千个文件描述符都就绪了，这时候epoll 要进行大量的I/O,此时压力太大。
 
 ### 4、处理 read 事件
-TODO
+
+```java
+
+@Slf4j
+public class ChannelDemo6 {
+  public static void main(String[] args) {
+    try (ServerSocketChannel channel = ServerSocketChannel.open()) {
+      channel.bind(new InetSocketAddress(8080));
+      System.out.println(channel);
+      Selector selector = Selector.open();
+      channel.configureBlocking(false);
+      channel.register(selector, SelectionKey.OP_ACCEPT);
+
+      while (true) {
+        int count = selector.select();
+        // int count = selector.selectNow();
+        log.debug("select count: {}", count);
+        // if (count <= 0) {
+        //   continue;
+        // }
+
+        // 获取所有事件
+        Set<SelectionKey> keys = selector.selectedKeys();
+
+        // 遍历所有事件，逐一处理
+        Iterator<SelectionKey> iter = keys.iterator();
+        while (iter.hasNext()) {
+          SelectionKey key = iter.next();
+          // 判断事件类型
+          if (key.isAcceptable()) {
+            ServerSocketChannel c = (ServerSocketChannel) key.channel();
+            // 必须处理
+            SocketChannel sc = c.accept();
+            sc.configureBlocking(false);
+            sc.register(selector, SelectionKey.OP_READ);
+            log.debug("连接已建立: {}", sc);
+          } else if (key.isReadable()) {
+            SocketChannel sc = (SocketChannel) key.channel();
+            ByteBuffer buffer = ByteBuffer.allocate(128);
+            int read = sc.read(buffer);
+            if (read == -1) {
+              key.cancel();
+              sc.close();
+            } else {
+              buffer.flip();
+              debug(buffer);
+            }
+          }
+          // 处理完毕，必须将事件移除
+          iter.remove();
+        }
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+}
+```
+
+#### 💡 为何要 iter.remove()
+
+> 因为 select 在事件发生后，就会将相关的 key 放入 selectedKeys 集合，但不会在处理完后从 selectedKeys 集合中移除，需要我们自己编码删除。例如
+> - 第一次触发了 ssckey 上的 accept 事件，没有移除 ssckey
+> - 第二次触发了 sckey 上的 read 事件，但这时 selectedKeys 中还有上次的 ssckey ，在处理时因为没有真正的 serverSocket 连上了，c.accept()返回的是null，就会导致空指针异常
+
+#### 💡 cancel 的作用
+
+cancel 会取消注册在 selector 上的 channel，并从 keys 集合中删除 key 后续不会再监听事件
+
+#### ⚠️ 不处理边界的问题
+
+思考注释中两个问题，以 bio 为例，其实 nio 道理是一样的
+
+```java
+public class Server {
+  public static void main(String[] args) throws IOException {
+    ServerSocket ss = new ServerSocket(9000);
+    while (true) {
+      Socket s = ss.accept();
+      InputStream in = s.getInputStream();
+      // 这里这么写，有没有问题
+      byte[] arr = new byte[4];
+      while (true) {
+        int read = in.read(arr);
+        // 这里这么写，有没有问题
+        if (read == -1) {
+          break;
+        }
+        System.out.println(new String(arr, 0, read));
+      }
+    }
+  }
+}
+```
+
+客户端
+
+```java
+public class Client {
+  public static void main(String[] args) throws IOException {
+    Socket max = new Socket("localhost", 9000);
+    OutputStream out = max.getOutputStream();
+    out.write("hello".getBytes());
+    out.write("world".getBytes());
+    out.write("你好".getBytes());
+    max.close();
+  }
+}
+```
+
+输出
+
+```shell
+hell
+owor
+ld�
+�好
+```
+
+> 这里的输出结果并不是我们想要的，因为每次读取到的数据不一定是4个字节，所以读取到的数据不一定是完整的
+
+#### 处理消息的边界
+
+![](image/7.png)
+
+- 一种思路是固定消息长度，数据包大小一样，服务器按预定长度读取，缺点是浪费带宽
+- 另一种思路是按分隔符拆分，缺点是效率低
+- TLV 格式，即 Type 类型、Length 长度、Value 数据，类型和长度已知的情况下，就可以方便获取消息大小，分配合适的 buffer，缺点是 buffer 需要提前分配，如果内容过大，则影响 server 吞吐量
+  - Http 1.1 是 TLV 格式
+  - Http 2.0 是 LTV 格式
+
+<div>
+<mermaid-wrapper dsl="
+sequenceDiagram
+客户端1 ->> 服务器: 发送 01234567890abcdef3333\r
+服务器 ->> ByteBuffer1: 第一次read存入01234567890abcdef
+服务器 ->> ByteBuffer2: 扩容
+ByteBuffer1 ->> ByteBuffer2: 拷贝01234567890abcdef
+服务器 ->> ByteBuffer2: 第二次read存入3333\r
+ByteBuffer2 ->> ByteBuffer2: 01234567890abcdef3333\r
+">
+</mermaid-wrapper>
+</div>
+
+服务器端
+
+```java
+private static void split(ByteBuffer source) {
+    source.flip();
+    for (int i = 0; i < source.limit(); i++) {
+        // 找到一条完整消息
+        if (source.get(i) == '\n') {
+            int length = i + 1 - source.position();
+            // 把这条完整消息存入新的 ByteBuffer
+            ByteBuffer target = ByteBuffer.allocate(length);
+            // 从 source 读，向 target 写
+            for (int j = 0; j < length; j++) {
+                target.put(source.get());
+            }
+            debugAll(target);
+        }
+    }
+    source.compact(); // 0123456789abcdef  position 16 limit 16
+}
+
+public static void main(String[] args) throws IOException {
+    // 1. 创建 selector, 管理多个 channel
+    Selector selector = Selector.open();
+    ServerSocketChannel ssc = ServerSocketChannel.open();
+    ssc.configureBlocking(false);
+    // 2. 建立 selector 和 channel 的联系（注册）
+    // SelectionKey 就是将来事件发生后，通过它可以知道事件和哪个channel的事件
+    SelectionKey sscKey = ssc.register(selector, 0, null);
+    // key 只关注 accept 事件
+    sscKey.interestOps(SelectionKey.OP_ACCEPT);
+    log.debug("sscKey:{}", sscKey);
+    ssc.bind(new InetSocketAddress(8080));
+    while (true) {
+        // 3. select 方法, 没有事件发生，线程阻塞，有事件，线程才会恢复运行
+        // select 在事件未处理时，它不会阻塞, 事件发生后要么处理，要么取消，不能置之不理
+        selector.select();
+        // 4. 处理事件, selectedKeys 内部包含了所有发生的事件
+        Iterator<SelectionKey> iter = selector.selectedKeys().iterator(); // accept, read
+        while (iter.hasNext()) {
+            SelectionKey key = iter.next();
+            // 处理key 时，要从 selectedKeys 集合中删除，否则下次处理就会有问题
+            iter.remove();
+            log.debug("key: {}", key);
+            // 5. 区分事件类型
+            if (key.isAcceptable()) { // 如果是 accept
+                ServerSocketChannel channel = (ServerSocketChannel) key.channel();
+                SocketChannel sc = channel.accept();
+                sc.configureBlocking(false);
+                ByteBuffer buffer = ByteBuffer.allocate(16); // attachment
+                // 将一个 byteBuffer 作为附件关联到 selectionKey 上
+                SelectionKey scKey = sc.register(selector, 0, buffer);
+                scKey.interestOps(SelectionKey.OP_READ);
+                log.debug("{}", sc);
+                log.debug("scKey:{}", scKey);
+            } else if (key.isReadable()) { // 如果是 read
+                try {
+                    SocketChannel channel = (SocketChannel) key.channel(); // 拿到触发事件的channel
+                    // 获取 selectionKey 上关联的附件
+                    ByteBuffer buffer = (ByteBuffer) key.attachment();
+                    int read = channel.read(buffer); // 如果是正常断开，read 的方法的返回值是 -1
+                    if(read == -1) {
+                        key.cancel();
+                    } else {
+                        split(buffer);
+                        // 需要扩容
+                        if (buffer.position() == buffer.limit()) {
+                            ByteBuffer newBuffer = ByteBuffer.allocate(buffer.capacity() * 2);
+                            buffer.flip();
+                            newBuffer.put(buffer); // 0123456789abcdef3333\n
+                            key.attach(newBuffer);
+                        }
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    key.cancel();  // 因为客户端断开了,因此需要将 key 取消（从 selector 的 keys 集合中真正删除 key）
+                }
+            }
+        }
+    }
+}
+```
