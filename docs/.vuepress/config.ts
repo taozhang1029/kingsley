@@ -10,7 +10,7 @@ export default defineUserConfig({
     bundler: viteBundler(),
     base: '/blog/',
     // 网站的标题，它将会被用作所有页面标题的前缀，同时，默认主题下，它将显示在导航栏（navbar）上。
-    title: '编程游乐场',
+    title: 'Coding游乐场',
     // 网站的描述，它将会以 <meta> 标签渲染到当前页面的 HTML 中。
     description: '程序员涛涛的博客空间',
     plugins: [
