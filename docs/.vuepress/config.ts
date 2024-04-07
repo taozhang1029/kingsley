@@ -30,7 +30,6 @@ export default defineUserConfig({
                 link: 'https://github.com/taozhang1029',
             },
         ],
-        sidebar: 'auto'
         // sidebarType: "left"
     })
 })
