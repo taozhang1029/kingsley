@@ -17,7 +17,8 @@ export default defineUserConfig({
         registerComponentsPlugin({
             componentsDir: path.resolve('docs/.vuepress/components'),
         }),
-        photoSwipePlugin(),
+        // 暂时注释掉photoSwipePlugin，会出现两次dialog的情况
+        // photoSwipePlugin(),
         searchPlugin(),
     ],
     theme: themeSidebar({
