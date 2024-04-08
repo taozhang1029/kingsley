@@ -1,9 +1,9 @@
 import {viteBundler} from '@vuepress/bundler-vite'
 import {defineUserConfig} from 'vuepress'
-import themeSidebar from 'vuepress-theme-sidebar';
-import defaultTheme from '@vuepress/theme-default';
+import themeSidebar from 'vuepress-theme-sidebar'
 import {registerComponentsPlugin} from '@vuepress/plugin-register-components'
-import { photoSwipePlugin } from '@vuepress/plugin-photo-swipe'
+import {photoSwipePlugin} from '@vuepress/plugin-photo-swipe'
+import searchPlugin from '@vuepress/plugin-search'
 import {path} from '@vuepress/utils'
 
 export default defineUserConfig({
@@ -18,6 +18,7 @@ export default defineUserConfig({
             componentsDir: path.resolve('docs/.vuepress/components'),
         }),
         photoSwipePlugin(),
+        searchPlugin(),
     ],
     theme: themeSidebar({
         colorMode: 'dark',
