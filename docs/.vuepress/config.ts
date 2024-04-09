@@ -2,7 +2,6 @@ import {viteBundler} from '@vuepress/bundler-vite'
 import {defineUserConfig} from 'vuepress'
 import themeSidebar from 'vuepress-theme-sidebar'
 import {registerComponentsPlugin} from '@vuepress/plugin-register-components'
-import {photoSwipePlugin} from '@vuepress/plugin-photo-swipe'
 import {searchPlugin} from '@vuepress/plugin-search'
 import {path} from '@vuepress/utils'
 
@@ -13,6 +12,10 @@ export default defineUserConfig({
     title: 'Coding游乐场',
     // 网站的描述，它将会以 <meta> 标签渲染到当前页面的 HTML 中。
     description: '程序员涛涛的博客空间',
+    // 网站的head，它将会以 <head> 标签渲染到当前页面的 HTML 中。
+    head: [
+        ['link', {rel: 'icon', href: '/blog/favicon.ico'}],
+    ],
     plugins: [
         registerComponentsPlugin({
             componentsDir: path.resolve('docs/.vuepress/components'),

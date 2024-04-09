@@ -1,5 +1,10 @@
 ---
-
+star: true
+title: 如何基于GitHub搭建自己的图床？
+categories:
+  - 环境搭建
+tags:
+  - 图床
 ---
 
 # 如何基于GitHub搭建自己的图床？

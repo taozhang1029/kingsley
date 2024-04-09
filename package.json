@@ -13,13 +13,13 @@
     "deploy": "/usr/bin/env sh deploy.sh"
   },
   "devDependencies": {
-    "vuepress": "^2.0.0-rc.9",
     "@vuepress/bundler-vite": "^2.0.0-rc.9",
     "@vuepress/plugin-photo-swipe": "^2.0.0-rc.19",
     "@vuepress/plugin-register-components": "^2.0.0-rc.15",
     "@vuepress/plugin-search": "^2.0.0-rc.24",
     "@vuepress/theme-default": "^2.0.0-rc.17",
     "mermaid": "^10.9.0",
+    "vuepress": "^2.0.0-rc.9",
     "vuepress-theme-sidebar": "^0.1.0"
   }
 }
