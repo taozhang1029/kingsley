@@ -3,7 +3,7 @@ import {defineUserConfig} from 'vuepress'
 import themeSidebar from 'vuepress-theme-sidebar'
 import {registerComponentsPlugin} from '@vuepress/plugin-register-components'
 import {photoSwipePlugin} from '@vuepress/plugin-photo-swipe'
-import searchPlugin from '@vuepress/plugin-search'
+import {searchPlugin} from '@vuepress/plugin-search'
 import {path} from '@vuepress/utils'
 
 export default defineUserConfig({
