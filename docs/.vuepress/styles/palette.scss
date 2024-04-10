@@ -1,7 +1,7 @@
 // 响应式变化点
-$MQNarrow: 959px !default;
-$MQMobile: 719px !default;
-$MQMobileNarrow: 419px !default;
+//$MQNarrow: 959px !default;
+//$MQMobile: 719px !default;
+//$MQMobileNarrow: 419px !default;
 
 // vuepress2.0只剩下上面3个变量了，其他样式只能通过重写样式覆盖
 :root {
@@ -17,6 +17,33 @@ $MQMobileNarrow: 419px !default;
       position: fixed;
       top: 100px;
       right: 0;
+    }
+  }
+
+  @media (max-width: 419px) {
+    .theme-default-content, .page-meta, .page-nav, #comment {
+      min-width: calc(100vw - 3em);
+    }
+    #comment {
+      padding-bottom: 60px;
+    }
+  }
+
+  @media (max-width: 719px) {
+    .theme-default-content, .page-meta, .page-nav, #comment {
+      min-width: calc(100vw - 3em);
+    }
+    #comment {
+      padding-bottom: 60px;
+    }
+  }
+
+  @media (max-width: 959px) {
+    .theme-default-content, .page-meta, .page-nav, #comment {
+      min-width: calc(100vw - 3em);
+    }
+    #comment {
+      padding-bottom: 60px;
     }
   }
 }

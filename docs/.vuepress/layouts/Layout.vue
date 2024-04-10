@@ -1,7 +1,7 @@
 <template>
   <Layout>
     <template #page-bottom>
-      <CommentService :darkmode="isDarkMode"/>
+      <CommentService :darkmode="isDarkMode" />
     </template>
   </Layout>
 </template>
