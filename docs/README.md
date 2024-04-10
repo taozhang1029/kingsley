@@ -1,4 +1,5 @@
 ---
+comment: true
 home: true
 heroImage: /favicon.ico
 heroText: 欢迎来到编程游乐场

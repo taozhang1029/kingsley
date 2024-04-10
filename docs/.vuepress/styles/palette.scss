@@ -10,4 +10,17 @@ $MQMobileNarrow: 419px !default;
 
 .page {
   padding-right: 13em;
+  height: 100vh;
+
+  .anchor-right {
+    .anchor-right-content {
+      position: fixed;
+      top: 100px;
+      right: 0;
+    }
+  }
+}
+
+.vp-back-to-top-button {
+  bottom: 1rem;
 }
