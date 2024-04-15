@@ -29,11 +29,11 @@ export default defineUserConfig({
             // 插件选项
             provider: "Giscus", //评论服务提供者。
             comment: true, //启用评论功能
-            repo: "taozhang1029/blogGiscus", //远程仓库
-            repoId: "R_kgDOLscgpg", //对应自己的仓库Id
+            repo: "taozhang1029/blog", //远程仓库
+            repoId: "R_kgDOLNSFGw", //对应自己的仓库Id
             category: "Announcements",
-            categoryId: "DIC_kwDOLscgps4CemZz",
-            // darkTheme: 'https://giscus.app/themes/custom_example.css'
+            categoryId: "DIC_kwDOLNSFG84CemZn",
+            darkTheme: 'https://giscus.app/themes/noborder_dark.css'
         }),
     ],
     theme: themeSidebar({
