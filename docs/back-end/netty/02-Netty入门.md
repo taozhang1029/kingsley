@@ -233,12 +233,12 @@ package io.netty.channel;
 import io.netty.util.concurrent.OrderedEventExecutor;
 
 /**
- * Will handle all the I/O operations for a {@link Channel} once registered.
- *
- * One {@link EventLoop} instance will usually handle more than one {@link Channel} but this may depend on
+ * Will handle all the I/O operations for a {@link io.netty.channel.Channel} once registered.
+ * One {@link EventLoop} instance will usually handle more than one {@link io.netty.channel.Channel} but this may depend on
  * implementation details and internals.
  *
  */
+@SuppressWarnings("all")
 public interface EventLoop extends OrderedEventExecutor, EventLoopGroup {
     @Override
     EventLoopGroup parent();
@@ -257,6 +257,10 @@ public interface EventLoop extends OrderedEventExecutor, EventLoopGroup {
   - 另有 next 方法获取集合中下一个 EventLoop
 
 以一个简单的实现为例：
+
+<CodeGroup>
+  <CodeGroupItem title="客户端">
+
 ```java
 package com.kingsley.netty.c2;
 
@@ -323,7 +327,9 @@ public class TestEventLoop {
 }
 ```
 
-输出
+  </CodeGroupItem>
+
+  <CodeGroupItem title="输出">
 
 ```shell
 2024-04-08 00:09:05.465 INFO  [main] com.kingsley.netty.c2.TestEventLoop               : EventLoop: io.netty.channel.nio.NioEventLoop@28feb3fa
@@ -338,7 +344,242 @@ public class TestEventLoop {
 2024-04-08 00:09:06.546 INFO  [nioEventLoopGroup-2-1] com.kingsley.netty.c2.TestEventLoop               : 执行定时任务2
 ```
 
+  </CodeGroupItem>
+</CodeGroup>
+
 #### 💡 优雅关闭  
 优雅关闭 shutdownGracefully 方法。该方法会首先切换 EventLoopGroup 到关闭状态从而拒绝新的任务的加入，然后在任务队列的任务都处理完成后，停止线程的运行。从而确保整体应用是在正常有序的状态下退出的
 
 #### NioEventLoop 处理 io 事件
+
+服务器端两个 nio worker 工人，配置四个客户端，通过命令行参数设置客户端ID，然后快速依次启动
+
+![img.png](image/clientCnnfig.png)
+![](https://cdn.jsdelivr.net/gh/taozhang1029/static-repository@master/img/202404172353544.png)
+
+<CodeGroup>
+<CodeGroupItem title="服务端">
+
+```java
+package com.kingsley.netty.c3;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.Charset;
+
+/**
+ * @author kingsley
+ * @date 2024/4/17 22:43
+ */
+@Slf4j
+public class EventLoopServer {
+
+    /**
+     * 主程序入口。
+     * 使用ServerBootstrap启动一个服务器，配置使用NIO传输，绑定到8080端口。
+     * 对每个新连接，使用ChannelInitializer初始化Channel，加入自定义的ChannelInboundHandlerAdapter以处理入站事件。
+     */
+    public static void main(String[] args) {
+        new ServerBootstrap() // 创建ServerBootstrap实例，用于启动服务器
+                .group(new NioEventLoopGroup(1), new NioEventLoopGroup(2)) // 指定使用NIO事件循环组
+                .channel(NioServerSocketChannel.class) // 指定使用NIO服务器套接字通道
+                .childHandler(new ChannelInitializer<NioSocketChannel>() { // 定义子通道（即每个新连接）的初始化处理器
+                    @Override
+                    protected void initChannel(NioSocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new ChannelInboundHandlerAdapter() { // 向通道处理链中添加自定义的入站事件处理器
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) { // 当有数据读取时
+                                ByteBuf buf = (ByteBuf) msg; // 将接收到的消息转换为ByteBuf类型
+                                log.info("receive: {}", buf.toString(Charset.defaultCharset())); // 打印接收到的数据
+                            }
+                        });
+                    }
+                }).bind(8080); // 绑定到8080端口并启动服务器
+    }
+
+}
+```
+
+</CodeGroupItem>
+<CodeGroupItem title="客户端">
+
+```java
+package com.kingsley.netty.c3;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.string.StringEncoder;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+
+/**
+ * netty客户端
+ *
+ * @author kingsley
+ * @date 2024/4/7 22:02
+ */
+@Slf4j
+public class EvenLoopClient {
+
+    public static void main(String[] args) throws InterruptedException {
+        // 1、创建客户端启动对象
+        Channel channel = new Bootstrap()
+                // 2、添加EventLoop
+                .group(new NioEventLoopGroup())
+                // 3、选择客户端channel实现类
+                .channel(NioSocketChannel.class)
+                // 4、添加处理器
+                .handler(new ChannelInitializer<NioSocketChannel>() {
+                    // 初始化channel，在连接成功之后调用
+                    @Override
+                    protected void initChannel(NioSocketChannel ch) {
+                        // 5、往pipeline链中添加一个handler处理器，这里使用 StringEncoder 将字符串编码成 ByteBuf
+                        ch.pipeline().addLast(new StringEncoder());
+                    }
+                })
+                // 6、启动客户端连接服务器，等待连接成功
+                .connect("127.0.0.1", 8080)
+                // 阻塞方法，等待连接成功
+                .sync()
+                // 代表连接对象
+                .channel();
+        String clientId = args[0];
+        log.info("客户端连接成功，channel: {}, clientId: {}", channel, clientId);
+        // 7、向服务器发送数据
+        channel.writeAndFlush(clientId + " ===> hello, netty1");
+        Thread.sleep(10000);
+        channel.writeAndFlush(clientId + "hello, netty2");
+    }
+}
+```
+
+</CodeGroupItem>
+
+<CodeGroupItem title="输出">
+
+```shell
+2024-04-17 23:55:39.875 DEBUG [nioEventLoopGroup-3-1] io.netty.util.Recycler                            : -Dio.netty.recycler.maxCapacityPerThread: 4096
+2024-04-17 23:55:39.876 DEBUG [nioEventLoopGroup-3-1] io.netty.util.Recycler                            : -Dio.netty.recycler.maxSharedCapacityFactor: 2
+2024-04-17 23:55:39.876 DEBUG [nioEventLoopGroup-3-1] io.netty.util.Recycler                            : -Dio.netty.recycler.linkCapacity: 16
+2024-04-17 23:55:39.876 DEBUG [nioEventLoopGroup-3-1] io.netty.util.Recycler                            : -Dio.netty.recycler.ratio: 8
+2024-04-17 23:55:39.876 DEBUG [nioEventLoopGroup-3-1] io.netty.util.Recycler                            : -Dio.netty.recycler.delayedQueue.ratio: 8
+2024-04-17 23:55:39.889 DEBUG [nioEventLoopGroup-3-1] io.netty.buffer.AbstractByteBuf                   : -Dio.netty.buffer.checkAccessible: true
+2024-04-17 23:55:39.890 DEBUG [nioEventLoopGroup-3-1] io.netty.buffer.AbstractByteBuf                   : -Dio.netty.buffer.checkBounds: true
+2024-04-17 23:55:39.893 DEBUG [nioEventLoopGroup-3-1] io.netty.util.ResourceLeakDetectorFactory         : Loaded default ResourceLeakDetector: io.netty.util.ResourceLeakDetector@452b789e
+2024-04-17 23:55:39.899 INFO  [nioEventLoopGroup-3-1] com.kingsley.netty.c3.EventLoopServer             : receive: client2 ===> hello, netty1
+2024-04-17 23:55:40.430 INFO  [nioEventLoopGroup-3-2] com.kingsley.netty.c3.EventLoopServer             : receive: client3 ===> hello, netty1
+2024-04-17 23:55:41.053 INFO  [nioEventLoopGroup-3-1] com.kingsley.netty.c3.EventLoopServer             : receive: client4 ===> hello, netty1
+2024-04-17 23:55:41.603 INFO  [nioEventLoopGroup-3-2] com.kingsley.netty.c3.EventLoopServer             : receive: client1 ===> hello, netty1
+2024-04-17 23:55:49.858 INFO  [nioEventLoopGroup-3-1] com.kingsley.netty.c3.EventLoopServer             : receive: client2 ===> hello, netty2
+2024-04-17 23:55:50.419 INFO  [nioEventLoopGroup-3-2] com.kingsley.netty.c3.EventLoopServer             : receive: client3 ===> hello, netty2
+2024-04-17 23:55:51.045 INFO  [nioEventLoopGroup-3-1] com.kingsley.netty.c3.EventLoopServer             : receive: client4 ===> hello, netty2
+2024-04-17 23:55:51.599 INFO  [nioEventLoopGroup-3-2] com.kingsley.netty.c3.EventLoopServer             : receive: client1 ===> hello, netty2
+```
+
+</CodeGroupItem>
+
+</CodeGroup>
+
+> - 从前四个读事件日志可以看出，服务端依次使用 nioEventLoopGroup-3-1、nioEventLoopGroup-3-2 线程处理客户端的请求。证明一个线程(EventLoop)可以处理多个客户端的请求，并且是通过轮询的方式获取线程(EventLoop)来处理客户端的请求
+> - 根据后四次读事件日志可以看出，对于同一个客户端连接通道，服务端使用相同的线程(EventLoop)处理请求
+
+![](https://cdn.jsdelivr.net/gh/taozhang1029/static-repository@master/img/202404180052346.png)
+
+#### ❓上述服务端的代码是否存在问题呢？
+由于服务端的一个线程可能要处理多个客户端的请求，如果某一个客户端的请求处理时间过长，那么服务端线程就会阻塞，导致其他客户端的请求无法处理。这种情况下服务端的吞吐量就会因为一个客户端的影响而下降。
+
+💡 解决方案
+
+创建一个独立的 EventLoopGroup 专门处理业务逻辑
+```java
+package com.kingsley.netty.c3;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.Charset;
+
+/**
+ * @author kingsley
+ * @date 2024/4/17 22:43
+ */
+@Slf4j
+public class EventLoopServer2 {
+
+    /**
+     * 主程序入口。
+     * 使用ServerBootstrap启动一个服务器，配置使用NIO传输，绑定到8080端口。
+     * 对每个新连接，使用ChannelInitializer初始化Channel，加入自定义的ChannelInboundHandlerAdapter以处理入站事件。
+     */
+    public static void main(String[] args) {
+        // 创建一个独立的 EventLoopGroup
+        EventLoopGroup group = new DefaultEventLoopGroup();
+        new ServerBootstrap()
+                .group(new NioEventLoopGroup(1), new NioEventLoopGroup(2))
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel ch) {
+                        ch.pipeline()
+                                // 使用 NioEventLoopGroup 处理
+                                .addLast(new ChannelInboundHandlerAdapter() {
+                                    @Override
+                                    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                        ByteBuf buf = (ByteBuf) msg;
+                                        log.info("receive: {}", buf.toString(Charset.defaultCharset()));
+                                        // 将消息传递到下一个 handler 处理，必须加这一行代码 ！！！ 否则在这就断了，不会将消息交给后续 handler 处理
+                                        ctx.fireChannelRead(msg);
+                                    }
+                                })
+                                // 使用 DefaultEventLoop 处理
+                                .addLast(group, "handler2", new ChannelInboundHandlerAdapter() {
+                                    @Override
+                                    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                                        ByteBuf buf = (ByteBuf) msg; // 将接收到的消息转换为ByteBuf类型
+                                        log.info("handler2 use defaultEventLoop process receive: {}", buf.toString(Charset.defaultCharset()));
+                                    }
+                                });
+                    }
+                }).bind(8080);
+    }
+
+}
+```
+
+先启动服务端，然后同时启动客户端1、客户端2，服务端输出：
+```shell
+2024-04-18 00:28:42.995 INFO  [nioEventLoopGroup-4-1] com.kingsley.netty.c3.EventLoopServer2            : receive: client2 ===> hello, netty1
+2024-04-18 00:28:42.996 INFO  [defaultEventLoopGroup-2-1] com.kingsley.netty.c3.EventLoopServer2            : handler2 use defaultEventLoop process receive: client2 ===> hello, netty1
+2024-04-18 00:28:43.585 INFO  [nioEventLoopGroup-4-2] com.kingsley.netty.c3.EventLoopServer2            : receive: client1 ===> hello, netty1
+2024-04-18 00:28:43.586 INFO  [defaultEventLoopGroup-2-2] com.kingsley.netty.c3.EventLoopServer2            : handler2 use defaultEventLoop process receive: client1 ===> hello, netty1
+2024-04-18 00:28:52.970 INFO  [nioEventLoopGroup-4-1] com.kingsley.netty.c3.EventLoopServer2            : receive: client2 ===> hello, netty2
+2024-04-18 00:28:52.972 INFO  [defaultEventLoopGroup-2-1] com.kingsley.netty.c3.EventLoopServer2            : handler2 use defaultEventLoop process receive: client2 ===> hello, netty2
+2024-04-18 00:28:53.580 INFO  [nioEventLoopGroup-4-2] com.kingsley.netty.c3.EventLoopServer2            : receive: client1 ===> hello, netty2
+2024-04-18 00:28:53.583 INFO  [defaultEventLoopGroup-2-2] com.kingsley.netty.c3.EventLoopServer2            : handler2 use defaultEventLoop process receive: client1 ===> hello, netty2
+```
+可以发现第二个handler使用的是 defaultEventLoopGroup，并且也是轮询绑定机制
+
+![](https://cdn.jsdelivr.net/gh/taozhang1029/static-repository@master/img/202404180053271.png)
+
+#### 💡 handler 执行中如何换人？
+
+关键代码
+
+<Badge type="warning" text="io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead()" vertical="middle" />
