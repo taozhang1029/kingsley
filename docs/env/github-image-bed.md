@@ -64,12 +64,12 @@ Token令牌用于个人身份验证，不需要密码也可以直接访问你的
 - 分支名：GitHub的分支名称
 - Token：GitHub中设定的AccessToken
 - 存储路径：最后一定要加上 /，例如 img/
-- 自定义域名：[https://fastly.jsdelivr.net/gh/用户名/仓库名](https://fastly.jsdelivr.net/gh/用户名/仓库名)
-  或 [https://cdn.jsdelivr.net/gh/用户名/仓库名](https://cdn.jsdelivr.net/gh/用户名/仓库名) 这样才可以通过cdn访问图片
+- 自定义域名：https://fastly.jsdelivr.net/gh/用户名/仓库名@分支名
+  或 https://cdn.jsdelivr.net/gh/用户名/仓库名@分支名 这样才可以通过cdn访问图片
 
-> CDN有时候不好使
+#### ⚠️ 注意：一定要在仓库名后面加上 @分支名 ，否则CDN会找不着图片
 
-![PicGoConfig](https://raw.githubusercontent.com/taozhang1029/static-repository/master/img/PicGoConfig.png?raw=true)
+![](https://cdn.jsdelivr.net/gh/taozhang1029/static-repository@master/img/202404180047203.png)
 
 #### 用PicGo实现上传
 
@@ -85,5 +85,6 @@ Token令牌用于个人身份验证，不需要密码也可以直接访问你的
 
 - Windows：文件 -> 偏好设置 -> 图像 -> 上传图片 -> 配置PicGo路径
 - MacOS：Typora -> 设置 -> 图像 -> 上传图片 -> 配置PicGo路径
+
 ![image-20240409000243372](https://raw.githubusercontent.com/taozhang1029/static-repository/master/img/202404090002397.png)
 
